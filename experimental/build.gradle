@@ -3,7 +3,7 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'kotlin'
 
-sourceCompatibility = 1.5
+sourceCompatibility = 1.8
 
 repositories {
     mavenLocal()
@@ -11,9 +11,12 @@ repositories {
     maven {
         url 'http://oss.sonatype.org/content/repositories/snapshots'
     }
-    jcenter()
     maven {
         url 'https://dl.bintray.com/kotlin/exposed'
+    }
+    jcenter()
+    maven {
+        url "https://dl.bintray.com/rbmhtechnology/maven"
     }
 }
 
@@ -25,6 +28,12 @@ compileTestKotlin {
 }
 
 dependencies {
+    compile 'org.scala-lang:scala-library:2.11.7'
+    compile group: 'com.typesafe.akka', name: 'akka-actor_2.11', version: '2.4.1'
+    compile group: 'com.typesafe.akka', name: 'akka-persistence_2.11', version: '2.4.1'
+    compile group: 'com.typesafe.akka', name: 'akka-remote_2.11', version: '2.4.1'
+    compile group: 'com.rbmhtechnology', name: 'eventuate_2.11', version: '0.4'
+    compile group: 'org.scala-lang', name: 'scala-library', version: '2.11.7'
     compile project(':core')
     compile project(':finance')
 
