@@ -68,7 +68,13 @@ We start by defining the ``CommercialPaper`` class. As in the previous tutorial,
         class CommercialPaper : Contract {
             override val legalContractReference: SecureHash = SecureHash.sha256("https://en.wikipedia.org/wiki/Commercial_paper")
 
-            override fun verify(tx: TransactionForContract) = verifyClause(tx, Clauses.Group(), tx.commands.select<Commands>())
+
+            override fun verify(tx: TransactionForContract) = verifyClause(tx, GroupingIntercept<State, Commands, Issued<Terms>>(
+                AnyComposition(
+                        Clauses.Redeem(),
+                        Clauses.Move(),
+                        Clauses.Issue()), { tx.groupStates<State, Issued<Terms>> { it.token } }),
+                tx.commands.select<Commands>())
 
             interface Commands : CommandData {
                 data class Move(override val contractHash: SecureHash? = null) : FungibleAsset.Commands.Move, Commands
@@ -84,10 +90,22 @@ We start by defining the ``CommercialPaper`` class. As in the previous tutorial,
               return SecureHash.Companion.sha256("https://en.wikipedia.org/wiki/Commercial_paper");
           }
 
-          @Override
-          public void verify(@NotNull TransactionForContract tx) throws IllegalArgumentException {
-              ClauseVerifier.verifyClause(tx, new Clauses.Group(), extractCommands(tx));
-          }
+         @Override
+         public void verify(@NotNull TransactionForContract tx) throws IllegalArgumentException {
+             ClauseVerifier.verifyClause(tx, new GroupingIntercept<>(new AnyComposition<>(
+                new Clauses.Redeem(),
+                new Clauses.Move(),
+                new Clauses.Issue()
+             ), JavaCommercialPaper::groupStates ), extractCommands(tx));
+         }
+
+We need to wrap the ``Move`` clause (as well as the ``Issue`` and ``Redeem`` clauses - see the relevant contract code
+for their full specifications) in an outer clause that understands how to group contract states and objects. For this
+we use the ``GroupingInterceptor`` clause and provide a function which handles grouping input/output states. This
+interceptor clause would normally contain a composite clause that then delegates to subclauses.
+
+For the ``CommercialPaper`` contract, this is the top level clause for the contract, and is passed directly into
+``verifyClause`` as shown above.
 
         public interface Commands extends CommandData {
             class Move implements Commands {

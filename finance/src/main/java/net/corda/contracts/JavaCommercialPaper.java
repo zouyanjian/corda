@@ -9,7 +9,7 @@ import net.corda.core.contracts.TransactionForContract.InOutGroup;
 import net.corda.core.contracts.clauses.AnyOf;
 import net.corda.core.contracts.clauses.Clause;
 import net.corda.core.contracts.clauses.ClauseVerifier;
-import net.corda.core.contracts.clauses.GroupClauseVerifier;
+import net.corda.core.contracts.clauses.GroupBy;
 import net.corda.core.crypto.CompositeKey;
 import net.corda.core.crypto.CryptoUtilities;
 import net.corda.core.crypto.Party;
@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import static kotlin.collections.CollectionsKt.single;
 import static net.corda.core.contracts.ContractsDSL.requireSingleCommand;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
-
 
 /**
  * This is a Java version of the CommercialPaper contract (chosen because it's simple). This demonstrates how the
@@ -138,25 +137,6 @@ public class JavaCommercialPaper implements Contract {
     }
 
     public interface Clauses {
-        class Group extends GroupClauseVerifier<State, Commands, State> {
-            // This complains because we're passing generic types into a varargs, but it is valid so we suppress the
-            // warning.
-            @SuppressWarnings("unchecked")
-            Group() {
-                super(new AnyOf<>(
-                    new Clauses.Redeem(),
-                    new Clauses.Move(),
-                    new Clauses.Issue()
-                ));
-            }
-
-            @NotNull
-            @Override
-            public List<InOutGroup<State, State>> groupStates(@NotNull TransactionForContract tx) {
-                return tx.groupStates(State.class, State::withoutOwner);
-            }
-        }
-
         class Move extends Clause<State, Commands, State> {
             @NotNull
             @Override
@@ -289,7 +269,7 @@ public class JavaCommercialPaper implements Contract {
     }
 
     @NotNull
-    private List<AuthenticatedObject<Commands>> extractCommands(@NotNull TransactionForContract tx) {
+    private static List<AuthenticatedObject<Commands>> extractCommands(@NotNull TransactionForContract tx) {
         return tx.getCommands()
                 .stream()
                 .filter((AuthenticatedObject<CommandData> command) -> command.getValue() instanceof Commands)
@@ -297,9 +277,17 @@ public class JavaCommercialPaper implements Contract {
                 .collect(Collectors.toList());
     }
 
+    private static List<TransactionForContract.InOutGroup<State, State>> groupStates(final TransactionForContract tx) {
+        return tx.groupStates(State.class, State::withoutOwner);
+    }
+
     @Override
     public void verify(@NotNull TransactionForContract tx) throws IllegalArgumentException {
-        ClauseVerifier.verifyClause(tx, new Clauses.Group(), extractCommands(tx));
+        ClauseVerifier.verifyClause(tx, new GroupBy<>(new AnyOf<>(
+                new Clauses.Redeem(),
+                new Clauses.Move(),
+                new Clauses.Issue()
+        ), JavaCommercialPaper::groupStates ), extractCommands(tx));
     }
 
     @NotNull

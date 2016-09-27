@@ -1,10 +1,14 @@
 package net.corda.contracts.asset
 
 import com.google.common.annotations.VisibleForTesting
+import net.corda.core.contracts.clauses.GroupBy
 import net.corda.contracts.asset.Obligation.Lifecycle.NORMAL
 import net.corda.contracts.clause.*
 import net.corda.core.contracts.*
-import net.corda.core.contracts.clauses.*
+import net.corda.core.contracts.clauses.AllOf
+import net.corda.core.contracts.clauses.Clause
+import net.corda.core.contracts.clauses.FirstOf
+import net.corda.core.contracts.clauses.verifyClause
 import net.corda.core.crypto.*
 import net.corda.core.random63BitValue
 import net.corda.core.serialization.CordaSerializable
@@ -30,7 +34,6 @@ val OBLIGATION_PROGRAM_ID = Obligation<Currency>()
  * @param P the product the obligation is for payment of.
  */
 class Obligation<P> : Contract {
-
     /**
      * TODO:
      * 1) hash should be of the contents, not the URI
@@ -44,29 +47,6 @@ class Obligation<P> : Contract {
     override val legalContractReference: SecureHash = SecureHash.sha256("https://www.big-book-of-banking-law.example.gov/cash-settlement.html")
 
     interface Clauses {
-        /**
-         * Parent clause for clauses that operate on grouped states (those which are fungible).
-         */
-        class Group<P> : GroupClauseVerifier<State<P>, Commands, Issued<Terms<P>>>(
-                AllOf(
-                        NoZeroSizedOutputs<State<P>, Commands, Terms<P>>(),
-                        FirstOf(
-                                SetLifecycle<P>(),
-                                AllOf(
-                                        VerifyLifecycle<State<P>, Commands, Issued<Terms<P>>, P>(),
-                                        FirstOf(
-                                                Settle<P>(),
-                                                Issue(),
-                                                ConserveAmount()
-                                        )
-                                )
-                        )
-                )
-        ) {
-            override fun groupStates(tx: TransactionForContract): List<TransactionForContract.InOutGroup<Obligation.State<P>, Issued<Terms<P>>>>
-                    = tx.groupStates<Obligation.State<P>, Issued<Terms<P>>> { it.amount.token }
-        }
-
         /**
          * Generic issuance clause
          */
@@ -377,7 +357,21 @@ class Obligation<P> : Contract {
 
     override fun verify(tx: TransactionForContract) = verifyClause<Commands>(tx, FirstOf<ContractState, Commands, Unit>(
             Clauses.Net<Commands, P>(),
-            Clauses.Group<P>()
+            GroupBy<State<P>, Commands, Issued<Terms<P>>>(
+                    AllOf<State<P>, Commands, Issued<Terms<P>>>(
+                            NoZeroSizedOutputs<State<P>, Commands, Terms<P>>(),
+                            FirstOf(
+                                    Clauses.SetLifecycle<P>(),
+                                    AllOf(
+                                            Clauses.VerifyLifecycle<State<P>, Commands, Issued<Terms<P>>, P>(),
+                                            FirstOf(
+                                                    Clauses.Settle<P>(),
+                                                    Clauses.Issue(),
+                                                    Clauses.ConserveAmount()
+                                            )
+                                    )
+                            )
+                    ), { groupStates<State<P>, Issued<Terms<P>>> { it.amount.token } })
     ), tx.commands.select<Obligation.Commands>())
 
     /**

@@ -1,5 +1,6 @@
 package net.corda.contracts.asset
 
+import net.corda.core.contracts.clauses.GroupBy
 import net.corda.contracts.clause.AbstractConserveAmount
 import net.corda.contracts.clause.AbstractIssue
 import net.corda.contracts.clause.NoZeroSizedOutputs
@@ -59,21 +60,6 @@ class CommodityContract : OnLedgerAsset<Commodity, CommodityContract.Commands, C
      *     conserved (output = input - exit)
      */
     interface Clauses {
-        /**
-         * Grouping clause to extract input and output states into matched groups and then run a set of clauses over
-         * each group.
-         */
-        class Group : GroupClauseVerifier<State, Commands, Issued<Commodity>>(AnyOf(
-                NoZeroSizedOutputs<State, Commands, Commodity>(),
-                Issue(),
-                ConserveAmount())) {
-            /**
-             * Group commodity states by issuance definition (issuer and underlying commodity).
-             */
-            override fun groupStates(tx: TransactionForContract)
-                    = tx.groupStates<State, Issued<Commodity>> { it.amount.token }
-        }
-
         /**
          * Standard issue clause, specialised to match the commodity issue command.
          */
@@ -139,7 +125,11 @@ class CommodityContract : OnLedgerAsset<Commodity, CommodityContract.Commands, C
     }
 
     override fun verify(tx: TransactionForContract)
-            = verifyClause(tx, Clauses.Group(), extractCommands(tx.commands))
+            = verifyClause(tx, GroupBy<State, Commands, Issued<Commodity>>(AnyOf(
+            NoZeroSizedOutputs<State, Commands, Commodity>(),
+            Clauses.Issue(),
+            Clauses.ConserveAmount()), { tx.groupStates<State, Issued<Commodity>> { it.amount.token } }
+    ), extractCommands(tx.commands))
 
     override fun extractCommands(commands: Collection<AuthenticatedObject<CommandData>>): List<AuthenticatedObject<Commands>>
             = commands.select<CommodityContract.Commands>()

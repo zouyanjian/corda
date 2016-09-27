@@ -42,11 +42,11 @@ abstract class Clause<in S : ContractState, C : CommandData, in K : Any> {
      * @param tx the full transaction being verified. This is provided for cases where clauses need to access
      * states or commands outside of their normal scope.
      * @param inputs input states which are relevant to this clause. By default this is the set passed into [verifyClause],
-     * but may be further reduced by clauses such as [GroupClauseVerifier].
+     * but may be further reduced by clauses such as [GroupBy].
      * @param outputs output states which are relevant to this clause. By default this is the set passed into [verifyClause],
-     * but may be further reduced by clauses such as [GroupClauseVerifier].
+     * but may be further reduced by clauses such as [GroupBy].
      * @param commands commands which are relevant to this clause. By default this is the set passed into [verifyClause],
-     * but may be further reduced by clauses such as [GroupClauseVerifier].
+     * but may be further reduced by clauses such as [GroupBy].
      * @param groupingKey a grouping key applied to states and commands, where applicable. Taken from
      * [TransactionForContract.InOutGroup].
      * @return the set of commands that are consumed IF this clause is matched, and cannot be used to match a

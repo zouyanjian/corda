@@ -1,5 +1,6 @@
 package net.corda.contracts
 
+import net.corda.core.contracts.clauses.GroupBy
 import net.corda.contracts.asset.sumCashBy
 import net.corda.contracts.clause.AbstractIssue
 import net.corda.core.contracts.*
@@ -18,6 +19,7 @@ import net.corda.core.schemas.QueryableState
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.Emoji
 import net.corda.schemas.CommercialPaperSchemaV1
+import java.security.PublicKey
 import java.time.Instant
 import java.util.*
 
@@ -55,7 +57,12 @@ class CommercialPaper : Contract {
             val maturityDate: Instant
     )
 
-    override fun verify(tx: TransactionForContract) = verifyClause(tx, Clauses.Group(), tx.commands.select<Commands>())
+    override fun verify(tx: TransactionForContract) = verifyClause(tx, GroupBy<State, Commands, Issued<Terms>>(
+            AnyOf(
+                    Clauses.Redeem(),
+                    Clauses.Move(),
+                    Clauses.Issue()), { tx.groupStates<State, Issued<Terms>> { it.token } }),
+            tx.commands.select<Commands>())
 
     data class State(
             val issuance: PartyAndReference,
@@ -102,15 +109,6 @@ class CommercialPaper : Contract {
     }
 
     interface Clauses {
-        class Group : GroupClauseVerifier<State, Commands, Issued<Terms>>(
-                AnyOf(
-                    Redeem(),
-                    Move(),
-                    Issue())) {
-            override fun groupStates(tx: TransactionForContract): List<TransactionForContract.InOutGroup<State, Issued<Terms>>>
-                    = tx.groupStates<State, Issued<Terms>> { it.token }
-        }
-
         class Issue : AbstractIssue<State, Commands, Terms>(
                 { map { Amount(it.faceValue.quantity, it.token) }.sumOrThrow() },
                 { token -> map { Amount(it.faceValue.quantity, it.token) }.sumOrZero(token) }) {

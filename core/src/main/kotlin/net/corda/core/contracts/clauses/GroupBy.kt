@@ -4,14 +4,20 @@ import net.corda.core.contracts.AuthenticatedObject
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.TransactionForContract
+import net.corda.core.contracts.clauses.Clause
 import java.util.*
 
-@Deprecated("Replaced by GroupBy, which takes in the grouping function as a parameter instead of requiring subclassing")
-abstract class GroupClauseVerifier<S : ContractState, C : CommandData, K : Any>(val clause: Clause<S, C, K>) : Clause<ContractState, C, Unit>() {
-    abstract fun groupStates(tx: TransactionForContract): List<TransactionForContract.InOutGroup<S, K>>
-
+/**
+ * Wrapper around a clause, which filters and groups the states before passing them to the delegate clause.
+ *
+ * @see [TransactionForContract.groupStates]
+ */
+class GroupBy<S : ContractState, C : CommandData, K : Any>(val clause: Clause<S, C, K>,
+                                                           val groupStates: TransactionForContract.() -> List<TransactionForContract.InOutGroup<S, K>>) : Clause<ContractState, C, Unit>() {
     override fun getExecutionPath(commands: List<AuthenticatedObject<C>>): List<Clause<*, *, *>>
             = clause.getExecutionPath(commands)
+
+    override val requiredCommands: Set<Class<out CommandData>> = clause.requiredCommands
 
     override fun verify(tx: TransactionForContract,
                         inputs: List<ContractState>,

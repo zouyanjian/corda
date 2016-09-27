@@ -1,12 +1,12 @@
 package net.corda.contracts.asset
 
+import net.corda.core.contracts.clauses.GroupBy
 import net.corda.contracts.clause.AbstractConserveAmount
 import net.corda.contracts.clause.AbstractIssue
 import net.corda.contracts.clause.NoZeroSizedOutputs
 import net.corda.core.contracts.*
 import net.corda.core.contracts.clauses.AllOf
 import net.corda.core.contracts.clauses.FirstOf
-import net.corda.core.contracts.clauses.GroupClauseVerifier
 import net.corda.core.contracts.clauses.verifyClause
 import net.corda.core.crypto.*
 import net.corda.core.schemas.MappedSchema
@@ -57,17 +57,6 @@ class Cash : OnLedgerAsset<Currency, Cash.Commands, Cash.State>() {
             = commands.select<Cash.Commands>()
 
     interface Clauses {
-        class Group : GroupClauseVerifier<State, Commands, Issued<Currency>>(AllOf<State, Commands, Issued<Currency>>(
-                NoZeroSizedOutputs<State, Commands, Currency>(),
-                FirstOf<State, Commands, Issued<Currency>>(
-                        Issue(),
-                        ConserveAmount())
-        )
-        ) {
-            override fun groupStates(tx: TransactionForContract): List<TransactionForContract.InOutGroup<State, Issued<Currency>>>
-                    = tx.groupStates<State, Issued<Currency>> { it.amount.token }
-        }
-
         class Issue : AbstractIssue<State, Commands, Currency>(
                 sum = { sumCash() },
                 sumOrZero = { sumCashOrZero(it) }
@@ -167,7 +156,15 @@ class Cash : OnLedgerAsset<Currency, Cash.Commands, Cash.State>() {
     override fun generateMoveCommand() = Commands.Move()
 
     override fun verify(tx: TransactionForContract)
-            = verifyClause(tx, Clauses.Group(), extractCommands(tx.commands))
+            = verifyClause(tx, GroupBy(
+            AllOf<State, Commands, Issued<Currency>>(
+                    NoZeroSizedOutputs<State, Commands, Currency>(),
+                    FirstOf<State, Commands, Issued<Currency>>(
+                            Clauses.Issue(),
+                            Clauses.ConserveAmount()
+                    )
+            )
+    , { groupStates<State, Issued<Currency>> { it.amount.token } }), extractCommands(tx.commands))
 }
 
 // Small DSL extensions.
