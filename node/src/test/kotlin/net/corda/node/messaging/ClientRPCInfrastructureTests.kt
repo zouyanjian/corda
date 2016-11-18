@@ -1,12 +1,16 @@
-package net.corda.client
+package net.corda.node.messaging
 
-import net.corda.client.impl.CordaRPCClientImpl
+import net.corda.core.messaging.RPCOps
+import net.corda.core.messaging.RPCReturnsObservables
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.utilities.LogHelper
 import net.corda.node.services.RPCUserService
 import net.corda.node.services.User
-import net.corda.node.services.messaging.*
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.RPC_REQUESTS_QUEUE
+import net.corda.node.services.messaging.CURRENT_RPC_USER
+import net.corda.node.services.messaging.CordaRPCClientImpl
+import net.corda.node.services.messaging.RPCDispatcher
+import net.corda.node.services.messaging.RPCSinceVersion
 import net.corda.node.utilities.AffinityExecutor
 import org.apache.activemq.artemis.api.core.Message.HDR_DUPLICATE_DETECTION_ID
 import org.apache.activemq.artemis.api.core.SimpleString
@@ -64,6 +68,7 @@ class ClientRPCInfrastructureTests {
         serverSession.createTemporaryQueue(RPC_REQUESTS_QUEUE, RPC_REQUESTS_QUEUE)
         producer = serverSession.createProducer()
         val userService = object : RPCUserService {
+            override fun addSystemUserPermission(permission: String) = throw UnsupportedOperationException()
             override fun getUser(username: String): User? = throw UnsupportedOperationException()
             override val users: List<User> get() = throw UnsupportedOperationException()
         }
