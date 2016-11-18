@@ -1,12 +1,10 @@
 package net.corda.vega.portfolio
 
-import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.StateRef
-import net.corda.core.contracts.TransactionState
+import net.corda.core.contracts.*
 import net.corda.core.crypto.Party
 import net.corda.core.sum
 import net.corda.core.node.ServiceHub
+import net.corda.node.services.messaging.CordaRPCOps
 import net.corda.vega.contracts.IRSState
 import net.corda.vega.contracts.SwapData
 import java.time.LocalDate
@@ -33,9 +31,11 @@ data class Portfolio(private val tradeStateAndRefs: List<StateAndRef<IRSState>>,
 fun List<StateAndRef<IRSState>>.toPortfolio(): Portfolio {
     return Portfolio(this)
 }
+inline fun <reified T : ContractState> List<StateRef>.toStateAndRef(rpc: CordaRPCOps): List<StateAndRef<T>> {
+    val stateRefs = rpc.vaultAndUpdates().first.associateBy { it.ref }
+    return mapNotNull { stateRefs[it] }.filterStatesOfType<T>()
+}
 
-fun <T : ContractState> List<StateRef>.toStateAndRef(services: ServiceHub): List<StateAndRef<T>> {
-    return services.vaultService.statesForRefs(this).map {
-        StateAndRef(it.value as TransactionState<T>, it.key)
-    }
+inline fun <reified T : ContractState> List<StateRef>.toStateAndRef(services: ServiceHub): List<StateAndRef<T>> {
+    return services.vaultService.statesForRefs(this).mapNotNull { it.value?.let { value -> StateAndRef(value, it.key) } }.filterStatesOfType<T>()
 }
