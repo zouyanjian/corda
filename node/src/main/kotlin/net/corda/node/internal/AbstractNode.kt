@@ -12,7 +12,10 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowLogicRefFactory
 import net.corda.core.flows.FlowStateMachine
 import net.corda.core.messaging.SingleMessageRecipient
-import net.corda.core.node.*
+import net.corda.core.node.CityDatabase
+import net.corda.core.node.NodeInfo
+import net.corda.core.node.PhysicalLocation
+import net.corda.core.node.ServiceEntry
 import net.corda.core.node.services.*
 import net.corda.core.node.services.NetworkMapCache.MapChangeType
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -22,6 +25,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.flows.CashCommand
 import net.corda.flows.CashFlow
 import net.corda.flows.sendRequest
+import net.corda.node.CordaPluginRegistry
 import net.corda.node.api.APIServer
 import net.corda.node.services.api.*
 import net.corda.node.services.config.NodeConfiguration
@@ -167,7 +171,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
     val networkMapRegistrationFuture: ListenableFuture<Unit>
         get() = _networkMapRegistrationFuture
 
-    /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.core.node.CordaPluginRegistry files that exist in the classpath */
+    /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.node.CordaPluginRegistry files that exist in the classpath */
     val pluginRegistries: List<CordaPluginRegistry> by lazy {
         ServiceLoader.load(CordaPluginRegistry::class.java).toList()
     }
@@ -309,7 +313,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
         }
     }
 
-    private val defaultFlowWhiteList: Map<Class<out FlowLogic<*>>, Set<Class<*>>> = mapOf(
+    protected val defaultFlowWhiteList: Map<Class<out FlowLogic<*>>, Set<Class<*>>> = mapOf(
             CashFlow::class.java to setOf(
                     CashCommand.IssueCash::class.java,
                     CashCommand.PayCash::class.java,
@@ -340,8 +344,8 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
     private fun buildPluginServices(tokenizableServices: MutableList<Any>): List<Any> {
         val pluginServices = pluginRegistries.flatMap { x -> x.servicePlugins }
         val serviceList = mutableListOf<Any>()
-        for (serviceClass in pluginServices) {
-            val service = serviceClass.getConstructor(PluginServiceHub::class.java).newInstance(services)
+        for (serviceConstructor in pluginServices) {
+            val service = serviceConstructor(services)
             serviceList.add(service)
             tokenizableServices.add(service)
             if (service is AcceptsFileUpload) {

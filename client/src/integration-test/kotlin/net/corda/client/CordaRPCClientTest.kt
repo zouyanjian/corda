@@ -11,6 +11,7 @@ import net.corda.node.driver.driver
 import net.corda.node.services.User
 import net.corda.node.services.config.configureTestSSL
 import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.toHostAndPort
+import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.startFlow
 import net.corda.node.services.startFlowPermission
 import net.corda.node.services.transactions.ValidatingNotaryService

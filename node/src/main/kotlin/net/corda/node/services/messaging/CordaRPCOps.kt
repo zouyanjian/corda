@@ -1,7 +1,10 @@
 package net.corda.node.services.messaging
 
+import net.corda.core.contracts.Attachment
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.CompositeKey
+import net.corda.core.crypto.Party
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StateMachineRunId
@@ -15,6 +18,8 @@ import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.StateMachineManager
 import net.corda.node.utilities.AddOrRemove
 import rx.Observable
+import java.io.InputStream
+import java.time.LocalDateTime
 
 data class StateMachineInfo(
         val id: StateMachineRunId,
@@ -112,6 +117,17 @@ interface CordaRPCOps : RPCOps {
      * Retrieve existing note(s) for a given Vault transaction
      */
     fun getVaultTransactionNotes(txnId: SecureHash): Iterable<String>
+
+    fun openAttachment(id: SecureHash): Attachment?
+    fun importAttachment(jar: InputStream): SecureHash
+    fun localTime(): LocalDateTime
+
+    /**
+     * TODO These need rethinking. Instead of these direct calls we should have a way of replicating a subset of
+     * the node's state locally and query that directly.
+     */
+    fun partyFromKey(key: CompositeKey): Party?
+    fun partyFromName(name: String): Party?
 }
 
 /**

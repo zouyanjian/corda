@@ -1,4 +1,4 @@
-package net.corda.client.impl
+package net.corda.node.services.messaging
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.KryoException
@@ -6,7 +6,7 @@ import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import com.google.common.cache.CacheBuilder
-import net.corda.client.CordaRPCClient
+import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.core.ErrorOr
 import net.corda.core.bufferUntilSubscribed
 import net.corda.core.random63BitValue

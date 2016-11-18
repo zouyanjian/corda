@@ -7,7 +7,7 @@ import com.jcraft.jsch.agentproxy.connector.SSHAgentConnector
 import com.jcraft.jsch.agentproxy.usocket.JNAUSocketFactory
 import kotlinx.support.jdk8.collections.parallelStream
 import kotlinx.support.jdk8.streams.toList
-import net.corda.client.CordaRPCClient
+import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.core.createDirectories
 import net.corda.core.div
 import net.corda.node.driver.PortAllocation
