@@ -24,6 +24,7 @@ import net.corda.core.serialization.serialize
 import net.corda.core.transactions.SignedTransaction
 import net.corda.flows.CashCommand
 import net.corda.flows.CashFlow
+import net.corda.flows.FinalityFlow
 import net.corda.flows.sendRequest
 import net.corda.node.CordaPluginRegistry
 import net.corda.node.api.APIServer
@@ -318,7 +319,8 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
                     CashCommand.IssueCash::class.java,
                     CashCommand.PayCash::class.java,
                     CashCommand.ExitCash::class.java
-            )
+            ),
+            FinalityFlow::class.java to setOf()
     )
 
     private fun initialiseFlowLogicFactory(): FlowLogicRefFactory {

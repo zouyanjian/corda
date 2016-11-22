@@ -61,9 +61,9 @@ class TraderDemoApi(val rpc: CordaRPCOps) {
             // attachment. Make sure we have the transaction prospectus attachment loaded into our store.
             //
             // This can also be done via an HTTP upload, but here we short-circuit and do it from code.
-            if (rpc.openAttachment(SellerFlow.PROSPECTUS_HASH) == null) {
+            if (!rpc.attachmentExists(SellerFlow.PROSPECTUS_HASH)) {
                 javaClass.classLoader.getResourceAsStream("bank-of-london-cp.jar").use {
-                    val id = rpc.importAttachment(it)
+                    val id = rpc.uploadAttachment(it)
                     assertEquals(SellerFlow.PROSPECTUS_HASH, id)
                 }
             }

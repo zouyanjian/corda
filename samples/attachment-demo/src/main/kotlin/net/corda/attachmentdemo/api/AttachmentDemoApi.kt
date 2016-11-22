@@ -31,9 +31,9 @@ class AttachmentDemoApi(val rpc: CordaRPCOps) {
         return utils.withParty(partyKey) {
             // Make sure we have the file in storage
             // TODO: We should have our own demo file, not share the trader demo file
-            if (rpc.openAttachment(PROSPECTUS_HASH) == null) {
+            if (!rpc.attachmentExists(PROSPECTUS_HASH)) {
                 javaClass.classLoader.getResourceAsStream("bank-of-london-cp.jar").use {
-                    val id = rpc.importAttachment(it)
+                    val id = rpc.uploadAttachment(it)
                     assertEquals(PROSPECTUS_HASH, id)
                 }
             }
@@ -41,15 +41,16 @@ class AttachmentDemoApi(val rpc: CordaRPCOps) {
             // Create a trivial transaction that just passes across the attachment - in normal cases there would be
             // inputs, outputs and commands that refer to this attachment.
             val ptx = TransactionType.General.Builder(notary = null)
-            ptx.addAttachment(rpc.openAttachment(PROSPECTUS_HASH)!!.id)
+            require(rpc.attachmentExists(PROSPECTUS_HASH))
+            ptx.addAttachment(PROSPECTUS_HASH)
 
             // Despite not having any states, we have to have at least one signature on the transaction
             ptx.signWith(ALICE_KEY)
 
             // Send the transaction to the other recipient
             val tx = ptx.toSignedTransaction()
-            rpc.startFlow(::FinalityFlow, tx, setOf(it)).returnValue.toBlocking().first()
-            logger.info("Successfully sent attachment with the FinalityFlow")
+            val protocolHandle = rpc.startFlow(::FinalityFlow, tx, setOf(it))
+            protocolHandle.returnValue.toBlocking().first()
 
             Response.accepted().build()
         }
@@ -68,8 +69,8 @@ class AttachmentDemoApi(val rpc: CordaRPCOps) {
             // we have a copy of the attachment.
             val tx = event.tx
             val response = if (tx.attachments.isNotEmpty()) {
-                val attachment = rpc.openAttachment(tx.attachments.first())
-                assertEquals(PROSPECTUS_HASH, attachment?.id)
+                assertEquals(PROSPECTUS_HASH, tx.attachments.first())
+                require(rpc.attachmentExists(PROSPECTUS_HASH))
 
                 println("File received - we're happy!\n\nFinal transaction is:\n\n${Emoji.renderIfSupported(event.tx)}")
                 Response.ok().entity("Final transaction is: ${Emoji.renderIfSupported(event.tx)}").build()

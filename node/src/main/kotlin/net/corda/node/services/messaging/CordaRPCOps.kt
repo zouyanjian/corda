@@ -1,6 +1,5 @@
 package net.corda.node.services.messaging
 
-import net.corda.core.contracts.Attachment
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.CompositeKey
@@ -13,7 +12,6 @@ import net.corda.core.node.services.NetworkMapCache
 import net.corda.core.node.services.StateMachineTransactionMapping
 import net.corda.core.node.services.Vault
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.utilities.ProgressTracker
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.StateMachineManager
 import net.corda.node.utilities.AddOrRemove
@@ -118,8 +116,8 @@ interface CordaRPCOps : RPCOps {
      */
     fun getVaultTransactionNotes(txnId: SecureHash): Iterable<String>
 
-    fun openAttachment(id: SecureHash): Attachment?
-    fun importAttachment(jar: InputStream): SecureHash
+    fun attachmentExists(id: SecureHash): Boolean
+    fun uploadAttachment(jar: InputStream): SecureHash
     fun localTime(): LocalDateTime
 
     /**
@@ -176,6 +174,6 @@ inline fun <T : Any, A, B, C, D, reified R : FlowLogic<T>> CordaRPCOps.startFlow
 
 data class FlowHandle<A>(
         val id: StateMachineRunId,
-        val progress: Observable<ProgressTracker.Change>,
+        val progress: Observable<String>,
         val returnValue: Observable<A>
 )

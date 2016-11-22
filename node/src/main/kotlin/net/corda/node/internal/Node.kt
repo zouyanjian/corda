@@ -1,16 +1,14 @@
 package net.corda.node.internal
 
 import com.codahale.metrics.JmxReporter
-import com.google.common.util.concurrent.SettableFuture
 import net.corda.core.div
-import net.corda.core.future
 import net.corda.core.messaging.SingleMessageRecipient
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.node.services.ServiceType
 import net.corda.core.node.services.UniquenessProvider
-import net.corda.core.then
 import net.corda.core.utilities.loggerFor
+import net.corda.flows.CashFlow
 import net.corda.node.printBasicNodeInfo
 import net.corda.node.serialization.NodeClock
 import net.corda.node.services.RPCUserService
@@ -18,6 +16,7 @@ import net.corda.node.services.RPCUserServiceImpl
 import net.corda.node.services.api.MessagingServiceInternal
 import net.corda.node.services.config.FullNodeConfiguration
 import net.corda.node.services.messaging.*
+import net.corda.node.services.startFlowPermission
 import net.corda.node.services.transactions.PersistentUniquenessProvider
 import net.corda.node.services.transactions.RaftUniquenessProvider
 import net.corda.node.services.transactions.RaftValidatingNotaryService
@@ -46,7 +45,6 @@ import java.net.InetAddress
 import java.nio.channels.FileLock
 import java.time.Clock
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import javax.management.ObjectName
 import javax.servlet.*
 import kotlin.concurrent.thread
@@ -123,11 +121,11 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
 
         // Add System user permissions
         defaultFlowWhiteList.forEach {
-            userService.addSystemUserPermission(it.key.name)
+            userService.addSystemUserPermission(startFlowPermission(it.key))
         }
         pluginRegistries.forEach {
             it.requiredFlows.forEach {
-                userService.addSystemUserPermission(it.key)
+                userService.addSystemUserPermission(startFlowPermission(it.key))
             }
         }
 

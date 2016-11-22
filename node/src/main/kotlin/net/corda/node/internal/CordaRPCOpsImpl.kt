@@ -12,7 +12,6 @@ import net.corda.core.node.services.StateMachineTransactionMapping
 import net.corda.core.node.services.Vault
 import net.corda.core.toObservable
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.utilities.ProgressTracker
 import net.corda.node.services.messaging.*
 import net.corda.node.services.startFlowPermission
 import net.corda.node.services.statemachine.FlowStateMachineImpl
@@ -86,14 +85,14 @@ class CordaRPCOpsImpl(
         val stateMachine = services.invokeFlowAsync(logicType, *args) as FlowStateMachineImpl<T>
         return FlowHandle(
                 id = stateMachine.id,
-                progress = stateMachine.logic.progressTracker?.changes ?: Observable.empty<ProgressTracker.Change>(),
+                progress = stateMachine.logic.track()?.second ?: Observable.empty(),
                 returnValue = stateMachine.resultFuture.toObservable()
         )
     }
 
     // TODO do these properly
-    override fun openAttachment(id: SecureHash) = services.storageService.attachments.openAttachment(id)
-    override fun importAttachment(jar: InputStream) = services.storageService.attachments.importAttachment(jar)
+    override fun attachmentExists(id: SecureHash) = services.storageService.attachments.openAttachment(id) != null
+    override fun uploadAttachment(jar: InputStream) = services.storageService.attachments.importAttachment(jar)
     override fun localTime(): LocalDateTime = LocalDateTime.now(services.clock)
 
     override fun partyFromKey(key: CompositeKey) = services.identityService.partyFromKey(key)

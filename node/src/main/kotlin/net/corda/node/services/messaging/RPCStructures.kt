@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory
 import rx.Notification
 import rx.Observable
 import java.time.Instant
+import java.time.LocalDateTime
 import java.util.*
 
 /** Global RPC logger */
@@ -96,7 +97,7 @@ val CURRENT_RPC_USER: ThreadLocal<User> = ThreadLocal()
 /** Helper method which checks that the current RPC user is entitled for the given permission. Throws a [PermissionException] otherwise. */
 fun requirePermission(permission: String) {
     if (permission !in CURRENT_RPC_USER.get().permissions) {
-        throw PermissionException("User not permissioned for $permission")
+        throw PermissionException("User not permissioned for $permission, permissions are ${CURRENT_RPC_USER.get().permissions}")
     }
 }
 
@@ -222,6 +223,9 @@ private class RPCKryo(observableSerializer: Serializer<Observable<Any>>? = null)
         register(FlowHandle::class.java)
         register(KryoException::class.java)
         register(StringBuffer::class.java)
+        register(Unit::class.java)
+        register(LocalDateTime::class.java)
+
         pluginRegistries.forEach { it.registerRPCKryoTypes(this) }
     }
 
