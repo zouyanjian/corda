@@ -12,7 +12,7 @@ import net.corda.core.serialization.OpaqueBytes
 import net.corda.core.transactions.SignedTransaction
 import net.corda.flows.CashCommand
 import net.corda.flows.CashFlow
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.node.driver.driver
 import net.corda.node.services.User
 import net.corda.node.services.config.FullNodeConfiguration

@@ -3,7 +3,7 @@ package net.corda.node.services
 import net.corda.core.node.PluginServiceHub
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.flows.NotaryChangeFlow
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 
 object NotaryChange {
     class Plugin : CordaPluginRegistry() {

@@ -9,7 +9,7 @@ import net.corda.irs.flows.AutoOfferFlow
 import net.corda.irs.flows.ExitServerFlow
 import net.corda.irs.flows.FixingFlow
 import net.corda.irs.flows.UpdateBusinessDayFlow
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import java.time.Duration
 
 class IRSPlugin : CordaPluginRegistry() {

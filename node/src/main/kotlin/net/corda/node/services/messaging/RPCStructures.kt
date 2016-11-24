@@ -29,7 +29,7 @@ import net.corda.core.serialization.*
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.flows.CashFlowResult
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.node.services.User
 import net.i2p.crypto.eddsa.EdDSAPrivateKey
 import net.i2p.crypto.eddsa.EdDSAPublicKey
@@ -49,15 +49,6 @@ val rpcLog: Logger by lazy { LoggerFactory.getLogger("net.corda.rpc") }
 /** Used in the RPC wire protocol to wrap an observation with the handle of the observable it's intended for. */
 data class MarshalledObservation(val forHandle: Int, val what: Notification<*>)
 
-/**
- * If an RPC is tagged with this annotation it may return one or more observables anywhere in its response graph.
- * Calling such a method comes with consequences: it's slower, and consumes server side resources as observations
- * will buffer up on the server until they're consumed by the client.
- */
-@Target(AnnotationTarget.FUNCTION)
-@MustBeDocumented
-annotation class RPCReturnsObservables
-
 /** Records the protocol version in which this RPC was added. */
 @Target(AnnotationTarget.FUNCTION)
 @MustBeDocumented
@@ -76,15 +67,6 @@ data class ClientRPCRequestMessage(
         const val OBSERVATIONS_TO = "observations-to"
         const val METHOD_NAME = "method-name"
     }
-}
-
-/**
- * Base interface that all RPC servers must implement. Note: in Corda there's only one RPC interface. This base
- * interface is here in case we split the RPC system out into a separate library one day.
- */
-interface RPCOps {
-    /** Returns the RPC protocol version. Exists since version 0 so guaranteed to be present. */
-    val protocolVersion: Int
 }
 
 /**

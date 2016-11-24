@@ -26,7 +26,7 @@ import net.corda.flows.CashCommand
 import net.corda.flows.CashFlow
 import net.corda.flows.FinalityFlow
 import net.corda.flows.sendRequest
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.node.api.APIServer
 import net.corda.node.services.api.*
 import net.corda.node.services.config.NodeConfiguration
@@ -35,7 +35,7 @@ import net.corda.node.services.events.NodeSchedulerService
 import net.corda.node.services.events.ScheduledActivityObserver
 import net.corda.node.services.identity.InMemoryIdentityService
 import net.corda.node.services.keys.PersistentKeyManagementService
-import net.corda.node.services.messaging.RPCOps
+import net.corda.core.messaging.RPCOps
 import net.corda.node.services.network.InMemoryNetworkMapCache
 import net.corda.node.services.network.NetworkMapService
 import net.corda.node.services.network.NetworkMapService.Companion.REGISTER_FLOW_TOPIC
@@ -172,7 +172,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
     val networkMapRegistrationFuture: ListenableFuture<Unit>
         get() = _networkMapRegistrationFuture
 
-    /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.node.CordaPluginRegistry files that exist in the classpath */
+    /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.core.node.CordaPluginRegistry files that exist in the classpath */
     val pluginRegistries: List<CordaPluginRegistry> by lazy {
         ServiceLoader.load(CordaPluginRegistry::class.java).toList()
     }

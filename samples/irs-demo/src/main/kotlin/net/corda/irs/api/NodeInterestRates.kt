@@ -15,7 +15,7 @@ import net.corda.core.transactions.FilteredTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.irs.flows.FixingFlow
 import net.corda.irs.flows.RatesFixFlow
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.node.services.api.AcceptsFileUpload
 import net.corda.node.utilities.AbstractJDBCHashSet
 import net.corda.node.utilities.FiberBox

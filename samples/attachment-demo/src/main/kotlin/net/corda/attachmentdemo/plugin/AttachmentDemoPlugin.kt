@@ -3,7 +3,7 @@ package net.corda.attachmentdemo.plugin
 import net.corda.attachmentdemo.api.AttachmentDemoApi
 import net.corda.core.transactions.SignedTransaction
 import net.corda.flows.FinalityFlow
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 
 class AttachmentDemoPlugin : CordaPluginRegistry() {
     // A list of classes that expose web APIs.

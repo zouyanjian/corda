@@ -8,7 +8,7 @@ import net.corda.core.node.recordTransactions
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.utilities.loggerFor
 import net.corda.flows.*
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import java.io.InputStream
 import javax.annotation.concurrent.ThreadSafe
 

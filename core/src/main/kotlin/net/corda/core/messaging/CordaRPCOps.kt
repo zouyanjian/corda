@@ -7,14 +7,13 @@ import net.corda.core.crypto.Party
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StateMachineRunId
+import net.corda.core.messaging.RPCOps
+import net.corda.core.messaging.RPCReturnsObservables
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.NetworkMapCache
 import net.corda.core.node.services.StateMachineTransactionMapping
 import net.corda.core.node.services.Vault
 import net.corda.core.transactions.SignedTransaction
-import net.corda.node.services.statemachine.FlowStateMachineImpl
-import net.corda.node.services.statemachine.StateMachineManager
-import net.corda.node.utilities.AddOrRemove
 import rx.Observable
 import java.io.InputStream
 import java.time.LocalDateTime
@@ -23,39 +22,11 @@ data class StateMachineInfo(
         val id: StateMachineRunId,
         val flowLogicClassName: String,
         val progressTrackerStepAndUpdates: Pair<String, Observable<String>>?
-) {
-    companion object {
-        fun fromFlowStateMachineImpl(psm: FlowStateMachineImpl<*>): StateMachineInfo {
-            return StateMachineInfo(
-                    id = psm.id,
-                    flowLogicClassName = psm.logic.javaClass.simpleName,
-                    progressTrackerStepAndUpdates = psm.logic.track()
-            )
-        }
-    }
-}
+)
 
 sealed class StateMachineUpdate(val id: StateMachineRunId) {
     class Added(val stateMachineInfo: StateMachineInfo) : StateMachineUpdate(stateMachineInfo.id)
     class Removed(id: StateMachineRunId) : StateMachineUpdate(id)
-
-    companion object {
-        fun fromStateMachineChange(change: StateMachineManager.Change): StateMachineUpdate {
-            return when (change.addOrRemove) {
-                AddOrRemove.ADD -> {
-                    val stateMachineInfo = StateMachineInfo(
-                            id = change.id,
-                            flowLogicClassName = change.logic.javaClass.simpleName,
-                            progressTrackerStepAndUpdates = change.logic.track()
-                    )
-                    StateMachineUpdate.Added(stateMachineInfo)
-                }
-                AddOrRemove.REMOVE -> {
-                    StateMachineUpdate.Removed(change.id)
-                }
-            }
-        }
-    }
 }
 
 /**

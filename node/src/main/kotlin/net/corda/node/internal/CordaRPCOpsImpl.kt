@@ -16,6 +16,7 @@ import net.corda.node.services.messaging.*
 import net.corda.node.services.startFlowPermission
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.StateMachineManager
+import net.corda.node.utilities.AddOrRemove
 import net.corda.node.utilities.databaseTransaction
 import org.jetbrains.exposed.sql.Database
 import rx.Observable
@@ -52,8 +53,8 @@ class CordaRPCOpsImpl(
     override fun stateMachinesAndUpdates(): Pair<List<StateMachineInfo>, Observable<StateMachineUpdate>> {
         val (allStateMachines, changes) = smm.track()
         return Pair(
-                allStateMachines.map { StateMachineInfo.fromFlowStateMachineImpl(it) },
-                changes.map { StateMachineUpdate.fromStateMachineChange(it) }
+                allStateMachines.map { stateMachineInfoFromFlowStateMachineImpl(it) },
+                changes.map { stateMachineUpdateFromStateMachineChange(it) }
         )
     }
 
@@ -90,11 +91,36 @@ class CordaRPCOpsImpl(
         )
     }
 
-    // TODO do these properly
     override fun attachmentExists(id: SecureHash) = services.storageService.attachments.openAttachment(id) != null
     override fun uploadAttachment(jar: InputStream) = services.storageService.attachments.importAttachment(jar)
     override fun localTime(): LocalDateTime = LocalDateTime.now(services.clock)
 
     override fun partyFromKey(key: CompositeKey) = services.identityService.partyFromKey(key)
     override fun partyFromName(name: String) = services.identityService.partyFromName(name)
+
+    companion object {
+        fun stateMachineInfoFromFlowStateMachineImpl(psm: FlowStateMachineImpl<*>): StateMachineInfo {
+            return StateMachineInfo(
+                    id = psm.id,
+                    flowLogicClassName = psm.logic.javaClass.simpleName,
+                    progressTrackerStepAndUpdates = psm.logic.track()
+            )
+        }
+
+        fun stateMachineUpdateFromStateMachineChange(change: StateMachineManager.Change): StateMachineUpdate {
+            return when (change.addOrRemove) {
+                AddOrRemove.ADD -> {
+                    val stateMachineInfo = StateMachineInfo(
+                            id = change.id,
+                            flowLogicClassName = change.logic.javaClass.simpleName,
+                            progressTrackerStepAndUpdates = change.logic.track()
+                    )
+                    StateMachineUpdate.Added(stateMachineInfo)
+                }
+                AddOrRemove.REMOVE -> {
+                    StateMachineUpdate.Removed(change.id)
+                }
+            }
+        }
+    }
 }

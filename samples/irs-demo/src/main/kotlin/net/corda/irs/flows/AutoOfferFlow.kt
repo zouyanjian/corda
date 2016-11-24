@@ -12,7 +12,7 @@ import net.corda.flows.TwoPartyDealFlow
 import net.corda.flows.TwoPartyDealFlow.Acceptor
 import net.corda.flows.TwoPartyDealFlow.AutoOffer
 import net.corda.flows.TwoPartyDealFlow.Instigator
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 
 /**
  * This whole class is really part of a demo just to initiate the agreement of a deal with a simple

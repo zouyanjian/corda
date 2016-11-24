@@ -3,7 +3,7 @@ package net.corda.vega.services
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.Party
 import net.corda.core.node.PluginServiceHub
-import net.corda.node.CordaPluginRegistry
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.vega.api.PortfolioApi
 import net.corda.vega.contracts.SwapData
 import net.corda.vega.flows.IRSTradeFlow

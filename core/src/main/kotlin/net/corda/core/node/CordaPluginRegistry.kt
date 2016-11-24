@@ -1,11 +1,10 @@
-package net.corda.node
+package net.corda.core.node
 
 import com.esotericsoftware.kryo.Kryo
-import net.corda.core.node.PluginServiceHub
 import net.corda.node.services.messaging.CordaRPCOps
 
 /**
- * Implement this interface on a class advertised in a META-INF/services/net.corda.node.CordaPluginRegistry file
+ * Implement this interface on a class advertised in a META-INF/services/net.corda.core.node.CordaPluginRegistry file
  * to extend a Corda node with additional application services.
  */
 abstract class CordaPluginRegistry(

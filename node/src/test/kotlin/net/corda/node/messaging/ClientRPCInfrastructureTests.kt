@@ -1,5 +1,7 @@
 package net.corda.node.messaging
 
+import net.corda.core.messaging.RPCOps
+import net.corda.core.messaging.RPCReturnsObservables
 import net.corda.core.millis
 import net.corda.core.random63BitValue
 import net.corda.core.serialization.SerializedBytes

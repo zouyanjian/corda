@@ -8,6 +8,8 @@ import com.esotericsoftware.kryo.io.Output
 import com.google.common.cache.CacheBuilder
 import net.corda.core.ErrorOr
 import net.corda.core.bufferUntilSubscribed
+import net.corda.core.messaging.RPCOps
+import net.corda.core.messaging.RPCReturnsObservables
 import net.corda.core.random63BitValue
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
