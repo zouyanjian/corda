@@ -193,15 +193,39 @@ calling ``isRelevant()`` has rights or obligations arising from this ``ContractS
 At this stage, the data which the parties in this scenario are to reach consensus over, is defined. The next step is to define
 the rules which determine what constitutes a valid purchase order.
 
-Process
--------
+.. todo::
 
-A discussion of contract code. What clauses and commands do we need to implement.
+    Process
+    -------
 
-.. image:: resources/purchase-order-state.png
-:width: 600
+    A discussion of contract code. What clauses and commands do we need to implement.
 
-Consensus
-How do the parties reach consensus? For the buyer an the seller to reach consensus they: * Both have to see the proposed purchase order. * Validate the proposed purchase order. * Sign the purchase order. * Validate the counter-part’s signature. * Notarise the purchase order.
+    .. image:: resources/purchase-order-state.png
+    :width: 600
 
-All the above happens by passing objects from node to node using the FLow framework. WIP. Some chat about flow sequence diagrams and an example flow diagram based on the ExampleFlow. We end up with signed transactions when all teh flows are complete. how will the parties interact with the Building your state A brief discussion of state interface choice. Code samples to implement the data model and state. Building the contract Code samples - discussion of clauses required. Link to clauses and contracts docs. Building the flows How to build a flow from scratch. An a note on services. We need to set up a listener for msgs on the wire. Building the interfaces How to build the APIs for users to interact with the CorDapp. Pulling it all together We need to sub-class CordaPluginRegistry.
+
+    Consensus
+    ---------
+
+    How do the parties reach consensus?
+    For the buyer an the seller to reach consensus they:
+
+    * Both have to see the proposed purchase order.
+    * Validate the proposed purchase order.
+    * Sign the purchase order.
+    * Validate the counter-part’s signature.
+    * Notarise the purchase order.
+
+    All the above happens by passing objects from node to node using the FLow framework.
+    Some chat about flow sequence diagrams and an example flow diagram based on the ExampleFlow.
+    We end up with signed transactions when all teh flows are complete.
+    how will the parties interact with the Building your state
+    A brief discussion of state interface choice.
+    Code samples to implement the data model and state.
+    Building the contract Code samples - discussion of clauses required.
+    Link to clauses and contracts docs.
+    Building the flows How to build a flow from scratch.
+    An a note on services.
+    We need to set up a listener for msgs on the wire.
+    Building the interfaces How to build the APIs for users to interact with the CorDapp.
+    Pulling it all together We need to sub-class CordaPluginRegistry.
