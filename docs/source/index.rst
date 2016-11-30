@@ -62,6 +62,7 @@ Read on to learn:
 
    creating-a-cordapp
    tutorial-cordapp
+   tutorial-corda-dev
 
 .. toctree::
    :maxdepth: 2
