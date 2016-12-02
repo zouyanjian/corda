@@ -343,7 +343,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration, val netwo
         val pluginServices = pluginRegistries.flatMap { x -> x.servicePlugins }
         val serviceList = mutableListOf<Any>()
         for (serviceConstructor in pluginServices) {
-            val service = serviceConstructor(services)
+            val service = serviceConstructor.apply(services)
             serviceList.add(service)
             tokenizableServices.add(service)
             if (service is AcceptsFileUpload) {

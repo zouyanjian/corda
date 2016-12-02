@@ -30,6 +30,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
 import net.corda.flows.CashFlowResult
 import net.corda.node.services.User
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 import net.i2p.crypto.eddsa.EdDSAPrivateKey
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import org.apache.activemq.artemis.api.core.SimpleString
@@ -77,8 +78,10 @@ val CURRENT_RPC_USER: ThreadLocal<User> = ThreadLocal()
 
 /** Helper method which checks that the current RPC user is entitled for the given permission. Throws a [PermissionException] otherwise. */
 fun requirePermission(permission: String) {
-    val currentUserPermissions = CURRENT_RPC_USER.get().permissions
-    if (permission !in currentUserPermissions) {
+    // TODO remove the NODE_USER condition once webserver doesn't need it
+    val currentUser = CURRENT_RPC_USER.get()
+    val currentUserPermissions = currentUser.permissions
+    if (currentUser.username != NODE_USER && permission !in currentUserPermissions) {
         throw PermissionException("User not permissioned for $permission, permissions are $currentUserPermissions")
     }
 }

@@ -16,10 +16,14 @@ import net.corda.core.serialization.serialize
 import net.corda.core.utilities.debug
 import net.corda.node.services.RPCUserService
 import net.corda.node.services.User
+import net.corda.node.services.config.NodeConfiguration
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 import net.corda.node.utilities.AffinityExecutor
 import org.apache.activemq.artemis.api.core.Message
 import org.apache.activemq.artemis.api.core.client.ClientConsumer
 import org.apache.activemq.artemis.api.core.client.ClientMessage
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x500.style.BCStyle
 import rx.Notification
 import rx.Observable
 import rx.Subscription
@@ -32,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * wrong system (you could just send a message). If you want complex customisation of how requests/responses
  * are handled, this is probably the wrong system.
  */
-abstract class RPCDispatcher(val ops: RPCOps, val userService: RPCUserService) {
+abstract class RPCDispatcher(val ops: RPCOps, val userService: RPCUserService, val config: NodeConfiguration) {
     // Throw an exception if there are overloaded methods
     private val methodTable = ops.javaClass.declaredMethods.groupBy { it.name }.mapValues { it.value.single() }
 
@@ -155,9 +159,19 @@ abstract class RPCDispatcher(val ops: RPCOps, val userService: RPCUserService) {
         return ClientRPCRequestMessage(SerializedBytes(argBytes), replyTo, observationsTo, methodName, user)
     }
 
+    // TODO remove this User once webserver doesn't need it
+    val nodeUser = User(NODE_USER, NODE_USER, setOf())
     @VisibleForTesting
     protected open fun getUser(message: ClientMessage): User {
-        return userService.getUser(message.requiredString(Message.HDR_VALIDATED_USER.toString()))!!
+        val validatedUser = message.requiredString(Message.HDR_VALIDATED_USER.toString())
+        val rpcUser = userService.getUser(validatedUser)
+        if (rpcUser != null) {
+            return rpcUser
+        } else if (X500Name(validatedUser).getRDNs(BCStyle.CN).first().first.value.toString() == config.myLegalName) {
+            return nodeUser
+        } else {
+            throw IllegalArgumentException("Validated user '$validatedUser' is not an RPC user nor the NODE user")
+        }
     }
 
     private fun ClientMessage.getReturnAddress(user: User, property: String, required: Boolean): String? {

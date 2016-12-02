@@ -11,11 +11,12 @@ import net.corda.flows.*
 import net.corda.core.node.CordaPluginRegistry
 import java.io.InputStream
 import javax.annotation.concurrent.ThreadSafe
+import java.util.function.Function
 
 object DataVending {
 
     class Plugin : CordaPluginRegistry() {
-        override val servicePlugins = listOf(::Service)
+        override val servicePlugins = listOf(Function(::Service))
     }
 
     /**

@@ -53,6 +53,7 @@ import java.util.*
 import javax.management.ObjectName
 import javax.servlet.*
 import kotlin.concurrent.thread
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 
 class ConfigurationException(message: String) : Exception(message)
 
@@ -123,16 +124,6 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
 
     override fun makeMessagingService(): MessagingServiceInternal {
         userService = RPCUserServiceImpl(configuration)
-
-        // Add System user permissions
-        defaultFlowWhiteList.forEach {
-            userService.addSystemUserPermission(startFlowPermission(it.key))
-        }
-        pluginRegistries.forEach {
-            it.requiredFlows.forEach {
-                userService.addSystemUserPermission(startFlowPermission(it.key))
-            }
-        }
 
         val serverAddr = with(configuration) {
             messagingServerAddress ?: {
@@ -236,7 +227,7 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
             for (webapi in webAPIsOnClasspath) {
                 log.info("Add plugin web API from attachment $webapi")
                 val customAPI = try {
-                    webapi(localRpc)
+                    webapi.apply(localRpc)
                 } catch (ex: InvocationTargetException) {
                     log.error("Constructor $webapi threw an error: ", ex.targetException)
                     continue
@@ -308,9 +299,9 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
         super.initialiseDatabasePersistence(insideTransaction)
     }
 
-    private fun connectLocalRpcAsSystemUser(): CordaRPCOps {
+    private fun connectLocalRpcAsNodeUser(): CordaRPCOps {
         val client = CordaRPCClient(configuration.artemisAddress, configuration)
-        client.start(RPCUserService.systemUserUsername, RPCUserService.systemUserPassword)
+        client.start(NODE_USER, NODE_USER)
         return client.proxy()
     }
 
@@ -321,7 +312,7 @@ class Node(override val configuration: FullNodeConfiguration, networkMapAddress:
         thread(name = "WebServer") {
             networkMapRegistrationFuture.getOrThrow()
             try {
-                webServer = initWebServer(connectLocalRpcAsSystemUser())
+                webServer = initWebServer(connectLocalRpcAsNodeUser())
             } catch(ex: Exception) {
                 // TODO: We need to decide if this is a fatal error, given the API is unavailable, or whether the API
                 //       is not critical and we continue anyway.

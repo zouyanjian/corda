@@ -2,6 +2,7 @@ package net.corda.core.node
 
 import com.esotericsoftware.kryo.Kryo
 import net.corda.core.messaging.CordaRPCOps
+import java.util.function.Function
 
 /**
  * Implement this interface on a class advertised in a META-INF/services/net.corda.core.node.CordaPluginRegistry file
@@ -12,7 +13,7 @@ abstract class CordaPluginRegistry(
          * List of lambdas returning JAX-RS objects. They may only depend on the RPC interface, as the webserver should
          * potentially be able to live in a process separate from the node itself.
          */
-        open val webApis: List<(CordaRPCOps) -> Any> = emptyList(),
+        open val webApis: List<Function<CordaRPCOps, out Any>> = emptyList(),
 
         /**
          * Map of static serving endpoints to the matching resource directory. All endpoints will be prefixed with "/web" and postfixed with "\*.
@@ -36,7 +37,7 @@ abstract class CordaPluginRegistry(
          * The [PluginServiceHub] will be fully constructed before the plugin service is created and will
          * allow access to the Flow factory and Flow initiation entry points there.
          */
-        open val servicePlugins: List<(PluginServiceHub) -> Any> = emptyList()
+        open val servicePlugins: List<Function<PluginServiceHub, out Any>> = emptyList()
 ) {
         /**
          * Optionally register types with [Kryo] for use over RPC, as we lock down the types that can be serialised in this

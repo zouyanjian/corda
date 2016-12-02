@@ -85,15 +85,31 @@ interface CordaRPCOps : RPCOps {
      */
     fun getVaultTransactionNotes(txnId: SecureHash): Iterable<String>
 
+    /**
+     * Checks whether an attachment with the given hash is stored on the node.
+     */
     fun attachmentExists(id: SecureHash): Boolean
-    fun uploadAttachment(jar: InputStream): SecureHash
-    fun currentNodeTime(): Instant
 
     /**
-     * TODO These need rethinking. Instead of these direct calls we should have a way of replicating a subset of
-     * the node's state locally and query that directly.
+     * Uploads a jar to the node, returns it's hash.
+     */
+    fun uploadAttachment(jar: InputStream): SecureHash
+
+    /**
+     * Returns the node-local current time.
+     */
+    fun currentNodeTime(): Instant
+
+    // TODO These need rethinking. Instead of these direct calls we should have a way of replicating a subset of
+    // the node's state locally and query that directly.
+    /**
+     * Returns the [Party] corresponding to the given key, if found.
      */
     fun partyFromKey(key: CompositeKey): Party?
+
+    /**
+     * Returns the [Party] with the given name as it's [Party.name]
+     */
     fun partyFromName(name: String): Party?
 }
 

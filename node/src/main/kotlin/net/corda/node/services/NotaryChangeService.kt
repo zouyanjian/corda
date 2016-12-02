@@ -4,10 +4,11 @@ import net.corda.core.node.PluginServiceHub
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.flows.NotaryChangeFlow
 import net.corda.core.node.CordaPluginRegistry
+import java.util.function.Function
 
 object NotaryChange {
     class Plugin : CordaPluginRegistry() {
-        override val servicePlugins = listOf(::Service)
+        override val servicePlugins = listOf(Function(::Service))
     }
 
     /**

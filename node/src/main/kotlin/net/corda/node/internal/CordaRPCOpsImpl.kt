@@ -14,9 +14,11 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.NetworkMapCache
 import net.corda.core.node.services.StateMachineTransactionMapping
 import net.corda.core.node.services.Vault
+import net.corda.core.serialization.serialize
 import net.corda.node.services.messaging.requirePermission
 import net.corda.core.toObservable
 import net.corda.core.transactions.SignedTransaction
+import net.corda.node.services.messaging.createRPCKryo
 import net.corda.node.services.startFlowPermission
 import net.corda.node.services.statemachine.FlowStateMachineImpl
 import net.corda.node.services.statemachine.StateMachineManager
@@ -24,6 +26,9 @@ import net.corda.node.utilities.AddOrRemove
 import net.corda.node.utilities.databaseTransaction
 import org.jetbrains.exposed.sql.Database
 import rx.Observable
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
 import java.time.Instant
 import java.time.LocalDateTime
@@ -129,4 +134,9 @@ class CordaRPCOpsImpl(
             }
         }
     }
+}
+
+fun main(args: Array<String>) {
+    val inputStream = BufferedInputStream(FileInputStream(File("/tmp/TMP")))
+    println(inputStream.serialize(createRPCKryo()))
 }

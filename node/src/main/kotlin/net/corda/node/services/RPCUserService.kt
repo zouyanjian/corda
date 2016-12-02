@@ -1,9 +1,8 @@
 package net.corda.node.services
 
-import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowLogic
 import net.corda.node.services.config.FullNodeConfiguration
-import java.util.*
+import net.corda.node.services.messaging.ArtemisMessagingComponent.Companion.NODE_USER
 
 /**
  * Service for retrieving [User] objects representing RPC users who are authorised to use the RPC system. A [User]
@@ -13,44 +12,17 @@ import java.util.*
 interface RPCUserService {
     fun getUser(username: String): User?
     val users: List<User>
-
-    /**
-     * TODO This is a temporary hack until we until we implement web auth properly
-     * The password should be unique per process, so in theory only the node itself should have access to it.
-     */
-    fun addSystemUserPermission(permission: String)
-    companion object {
-        val systemUserUsername = "~systemUser"
-        val systemUserPassword: String = SecureHash.randomSHA256().toString()
-    }
 }
 
 // TODO Store passwords as salted hashes
 // TODO Or ditch this and consider something like Apache Shiro
 class RPCUserServiceImpl(config: FullNodeConfiguration) : RPCUserService {
 
-    private val _users: HashMap<String, User>
-
-    init {
-        val defaultUsers = listOf(
-                User(
-                        username = RPCUserService.systemUserUsername,
-                        password = RPCUserService.systemUserPassword,
-                        permissions = setOf()
-                )
-        )
-        _users = HashMap((defaultUsers + config.rpcUsers).associateBy(User::username))
-    }
+    private val _users = config.rpcUsers.associateBy(User::username)
 
     override fun getUser(username: String): User? = _users[username]
 
     override val users: List<User> get() = _users.values.toList()
-
-    override fun addSystemUserPermission(permission: String) {
-        _users.computeIfPresent(RPCUserService.systemUserUsername) { _username, systemUser ->
-            systemUser.copy(permissions = systemUser.permissions + setOf(permission))
-        }
-    }
 }
 
 data class User(val username: String, val password: String, val permissions: Set<String>) {
