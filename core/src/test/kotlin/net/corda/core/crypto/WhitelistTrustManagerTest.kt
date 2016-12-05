@@ -55,8 +55,8 @@ class WhitelistTrustManagerTest {
         val serverCert = X509Utilities.createServerCert(subject,
                 serverKey.public,
                 otherCaCertAndKey,
-                listOf(),
-                listOf())
+                setOf(),
+                setOf())
 
         val keyStore = KeyStore.getInstance(KeyStore.getDefaultType())
         keyStore.load(null, null)

@@ -356,8 +356,8 @@ object X509Utilities {
     fun createServerCert(subject: X500Name,
                          publicKey: PublicKey,
                          certificateAuthority: CACertAndKey,
-                         subjectAlternativeNameDomains: List<String>,
-                         subjectAlternativeNameIps: List<String>): X509Certificate {
+                         subjectAlternativeNameDomains: Set<String>,
+                         subjectAlternativeNameIps: Set<String>): X509Certificate {
 
         val issuer = X509CertificateHolder(certificateAuthority.certificate.encoded).subject
         val serial = BigInteger.valueOf(random63BitValue())
@@ -380,7 +380,6 @@ object X509Utilities {
                 DERSequence(purposes))
 
         val subjectAlternativeNames = ArrayList<ASN1Encodable>()
-        subjectAlternativeNames.add(GeneralName(GeneralName.dNSName, subject.getRDNs(BCStyle.CN).first().first.value))
 
         for (subjectAlternativeNameDomain in subjectAlternativeNameDomains) {
             subjectAlternativeNames.add(GeneralName(GeneralName.dNSName, subjectAlternativeNameDomain))
@@ -591,8 +590,8 @@ object X509Utilities {
                 getDevX509Name(commonName),
                 serverKey.public,
                 intermediateCA,
-                if (host.canonicalHostName == host.hostName) listOf() else listOf(host.hostName),
-                listOf(host.hostAddress))
+                setOf(host.hostName),
+                setOf(host.hostAddress))
 
         val keyPass = keyPassword.toCharArray()
         val keyStore = loadOrCreateKeyStore(keyStoreFilePath, storePassword)
