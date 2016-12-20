@@ -69,7 +69,7 @@ dependencies {
     compile "com.google.guava:guava:19.0"
 
     // JOpt: for command line flags.
-    compile "net.sf.jopt-simple:jopt-simple:5.0.2"
+    compile "net.sf.jopt-simple:jopt-simple:$jopt_version"
 
     // Artemis: for reliable p2p message queues.
     compile "org.apache.activemq:artemis-server:${artemis_version}"

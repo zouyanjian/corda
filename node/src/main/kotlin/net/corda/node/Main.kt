@@ -63,7 +63,8 @@ fun main(args: Array<String>) {
         renderBasicInfoToConsole = false
     }
 
-    drawBanner()
+    // TODO: Make this print the actual node version.
+    drawCordaLogoBanner("DEVELOPER SNAPSHOT")
 
     val baseDirectoryPath = if (cmdlineOptions.has(baseDirectoryArg)) Paths.get(cmdlineOptions.valueOf(baseDirectoryArg)) else Paths.get(".").normalize()
     System.setProperty("log-path", (baseDirectoryPath / "logs").toAbsolutePath().toString())
@@ -122,6 +123,7 @@ private fun printPluginsAndServices(node: Node) {
 }
 
 private fun messageOfTheDay(): Pair<String, String> {
+    // TODO: More messages
     val messages = arrayListOf(
             "The only distributed ledger that pays\nhomage to Pac Man in its logo.",
             "You know, I was a banker once ...\nbut I lost interest. ${Emoji.bagOfCash}",
@@ -139,11 +141,15 @@ private fun messageOfTheDay(): Pair<String, String> {
     return Pair(a, b)
 }
 
-private fun drawBanner() {
+fun drawCordaLogoBanner(caption: String) {
     // This line makes sure ANSI escapes work on Windows, where they aren't supported out of the box.
     AnsiConsole.systemInstall()
 
     val (msg1, msg2) = Emoji.renderIfSupported { messageOfTheDay() }
+
+    val underbar1 = "--- $caption "
+    val underbar2 = "-".repeat(80 - underbar1.length)
+    val underbar = underbar1 + underbar2
 
     println(Ansi.ansi().fgBrightRed().a(
 """
@@ -151,8 +157,7 @@ private fun drawBanner() {
   / ____/     _________/ /___ _
  / /     __  / ___/ __  / __ `/         """).fgBrightBlue().a(msg1).newline().fgBrightRed().a(
 "/ /___  /_/ / /  / /_/ / /_/ /          ").fgBrightBlue().a(msg2).newline().fgBrightRed().a(
-"""\____/     /_/   \__,_/\__,_/""").reset().newline().newline().fgBrightDefault().
-a("--- DEVELOPER SNAPSHOT ------------------------------------------------------------").newline().reset())
+"""\____/     /_/   \__,_/\__,_/""").reset().newline().newline().fgBrightDefault().a(underbar).newline().reset())
 }
 
 
