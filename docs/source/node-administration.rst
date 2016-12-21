@@ -40,7 +40,7 @@ and you can then find an install under ``tools/corda-tool/build/install/corda-to
 ``bin`` and ``lib`` subdirectories which can be copied elsewhere, or you can simply add the bin directory to your
 path.
 
-.. warning:: The tool has not been tested yet on Windows.
+.. warning:: The tool is experimental and has not been tested yet on Windows. Some commands may not work yet.
 
 To see a list of available commands, you can run ``corda-tool --help``. More detail on each command can be found
 in the `API docs for the RPC interface <api/net.corda.node.services.messaging/-corda-r-p-c-ops/index.html>`_. You

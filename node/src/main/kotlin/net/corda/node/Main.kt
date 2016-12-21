@@ -148,7 +148,7 @@ fun drawCordaLogoBanner(caption: String) {
     val (msg1, msg2) = Emoji.renderIfSupported { messageOfTheDay() }
 
     val underbar1 = "--- $caption "
-    val underbar2 = "-".repeat(80 - underbar1.length)
+    val underbar2 = "-".repeat(84 - underbar1.length)
     val underbar = underbar1 + underbar2
 
     println(Ansi.ansi().fgBrightRed().a(

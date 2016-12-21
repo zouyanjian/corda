@@ -6,11 +6,13 @@ import joptsimple.ArgumentAcceptingOptionSpec
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.utilities.Emoji
 import net.corda.node.drawCordaLogoBanner
 import net.corda.node.services.config.NodeSSLConfiguration
 import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.RPCException
 import org.apache.activemq.artemis.api.core.ActiveMQNotConnectedException
+import org.fusesource.jansi.Ansi
 import org.jline.reader.*
 import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
@@ -110,6 +112,11 @@ private fun runOneShotCommand(options: OptionSet, outputFormat: Format, proxy: C
 
 private fun runConsole(outputFormat: Format, proxy: CordaRPCOps, rpcParser: CommandLineRPCParser<CordaRPCOps>) {
     drawCordaLogoBanner("RPC CONSOLE")
+
+    Emoji.renderIfSupported {
+        println(Ansi.ansi().bgRed().fg(Ansi.Color.WHITE).bold().a("${Emoji.skullAndCrossBones} EXPERIMENTAL ".repeat(5).trim()).reset())
+        println()
+    }
 
     val availableCommands: TreeSet<String> = sortedSetOf(
             "help",
