@@ -28,7 +28,6 @@ dependencies {
     // Jackson: Mapping of strings in YAML format to arbitrary objects.
     compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jackson_version"
     compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
     // JOpt: for command line flags.
     compile "net.sf.jopt-simple:jopt-simple:$jopt_version"

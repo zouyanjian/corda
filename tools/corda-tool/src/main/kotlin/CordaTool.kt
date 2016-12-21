@@ -1,34 +1,38 @@
 @file:JvmName("CordaTool")
 package net.corda.rpc
 
-import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.google.common.net.HostAndPort
 import joptsimple.ArgumentAcceptingOptionSpec
 import joptsimple.OptionParser
+import joptsimple.OptionSet
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.node.drawCordaLogoBanner
 import net.corda.node.services.config.NodeSSLConfiguration
 import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.RPCException
+import org.apache.activemq.artemis.api.core.ActiveMQNotConnectedException
 import org.jline.reader.*
+import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
+import printAndFollowRPCResponse
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 
 enum class Format {
-    YAML,
-    JSON,
-    TO_STRING
+    yaml,
+    json,
+    tostring
 }
 
 /**
  * This program lets you send RPCs to a server given simple textual descriptions on the command line.
+ *
+ * TODO: Support reading multiple commands from standard input, for more complex scripting uses.
  */
 fun main(args: Array<String>) {
     val parser = OptionParser()
@@ -40,7 +44,7 @@ fun main(args: Array<String>) {
     val userArg = parser.accepts("user", "The username to log into the node as. Taken from \$CORDA_USER if not specified.").withRequiredArg()
     val passwordArg = parser.accepts("password", "The password for the given user. Taken from \$CORDA_PASSWORD if not specified, or else prompted for at the console.").withRequiredArg()
     val timeoutArg = parser.accepts("timeout", "How long to wait for an RPC to complete, in seconds.").withRequiredArg().ofType(Double::class.java).defaultsTo(10.0)
-    val outputFormatArg = parser.accepts("format", "What format to print the result in.").withRequiredArg().ofType(Format::class.java).defaultsTo(Format.YAML)
+    val outputFormatArg = parser.accepts("format", "What format to print the result in.").withRequiredArg().ofType(Format::class.java).defaultsTo(Format.yaml)
     val consoleArg = parser.accepts("console", "If specified, opens up an interactive REPL where you can dispatch commands one after the other.")
 
     val options = try {
@@ -81,16 +85,27 @@ fun main(args: Array<String>) {
         override val trustStorePassword: String = "trustpass"
         override val certificatesPath: Path = Paths.get(certsDirStr)
     }).use {
-        it.start(userStr, passwordStr)
+        try {
+            it.start(userStr, passwordStr)
+        } catch (e: ActiveMQNotConnectedException) {
+            // Artemis already splatted an exception to the screen by this point :(
+            error("Failed to connect to $nodeAddress - are you trying to connect to an HTTP port instead of an AMQP port by mistake?")
+        }
+
         val proxy = it.proxy(timeout)
 
         if (options.has(consoleArg)) {
             runConsole(outputFormat, proxy, rpcParser)
         } else {
-            val command = options.nonOptionArguments().joinToString(" ")
-            parseCommand(command, proxy, rpcParser)?.let { execute(outputFormat, it) }
+            runOneShotCommand(options, outputFormat, proxy, rpcParser)
         }
     }
+}
+
+private fun runOneShotCommand(options: OptionSet, outputFormat: Format, proxy: CordaRPCOps, rpcParser: CommandLineRPCParser<CordaRPCOps>) {
+    val command = options.nonOptionArguments().joinToString(" ")
+    val parsedRPC = parseCommand(command, proxy, rpcParser) ?: return
+    execute(outputFormat, parsedRPC)?.get()
 }
 
 private fun runConsole(outputFormat: Format, proxy: CordaRPCOps, rpcParser: CommandLineRPCParser<CordaRPCOps>) {
@@ -105,49 +120,66 @@ private fun runConsole(outputFormat: Format, proxy: CordaRPCOps, rpcParser: Comm
             *rpcParser.methodMap.keys.toTypedArray()
     )
 
-    val lineReader = LineReaderBuilder.builder()
-            .appName("Corda")
-            .terminal(TerminalBuilder.terminal())
-            .completer { lineReader, parsedLine: ParsedLine, resultsList: MutableList<Candidate> ->
-                val text = parsedLine.line().trim()
-                availableCommands.subSet(text, true, text + Character.MAX_VALUE, false).map(::Candidate).toCollection(resultsList)
+    val terminal = TerminalBuilder.terminal()
+
+    // If the user presses Ctrl-C whilst following a future, just stop caring and go back to the console.
+    val futureToFinish = AtomicReference<CompletableFuture<Unit>?>()
+    terminal.handle(Terminal.Signal.INT) {
+        futureToFinish.getAndSet(null)?.complete(Unit)
+    }
+
+    terminal.use {
+        val lineReader = LineReaderBuilder.builder()
+                .appName("Corda")
+                .terminal(terminal)
+                .completer { lineReader, parsedLine: ParsedLine, resultsList: MutableList<Candidate> ->
+                    // Allow tab-completion for commands.
+                    // TODO: Support tab completion of parameters and object fields too.
+                    val text = parsedLine.line().trim()
+                    availableCommands.subSet(text, true, text + Character.MAX_VALUE, false).map(::Candidate).toCollection(resultsList)
+                }
+                .build()
+        lineReader.unsetOpt(LineReader.Option.INSERT_TAB)
+        var format = outputFormat
+        while (true) {
+            val input = try {
+                lineReader.readLine(">>> ").trim()
+            } catch (e: UserInterruptException) {
+                println("Bye bye!")
+                break
+            } catch (e: EndOfFileException) {
+                println("Bye bye!")
+                break
             }
-            .build()
-    lineReader.unsetOpt(LineReader.Option.INSERT_TAB)
-    var format = outputFormat
-    while (true) {
-        val input = try {
-            lineReader.readLine(">>> ").trim()
-        } catch (e: UserInterruptException) {
-            println("Bye bye!")
-            break
-        } catch (e: EndOfFileException) {
-            println("Bye bye!")
-            break
+
+            if (input.isEmpty()) continue
+
+            val loweredInput = input.toLowerCase()
+            if (loweredInput == "help" || loweredInput == "?" || loweredInput == "/help") {
+                printCommandHelp(rpcParser)
+                continue
+            } else if (loweredInput == "use yaml") {
+                format = Format.yaml
+                continue
+            } else if (loweredInput == "use json") {
+                format = Format.json
+                continue
+            } else if (loweredInput == "use tostring") {
+                format = Format.tostring
+                continue
+            } else if (loweredInput == "quit" || loweredInput == "exit") {
+                println("Bye bye")
+                break
+            }
+
+            val pendingRPC = parseCommand(input, proxy, rpcParser) ?: continue
+            val future = execute(format, pendingRPC)
+            if (future != null) {
+                // Following an observable: wait either for it to complete, or the user to press Ctrl-C.
+                futureToFinish.set(future)
+                future.get()
+            }
         }
-
-        if (input.isEmpty()) continue
-
-        val loweredInput = input.toLowerCase()
-        if (loweredInput == "help" || loweredInput == "?" || loweredInput == "/help") {
-            printCommandHelp(rpcParser)
-            continue
-        } else if (loweredInput == "use yaml") {
-            format = Format.YAML
-            continue
-        } else if (loweredInput == "use json") {
-            format = Format.JSON
-            continue
-        } else if (loweredInput == "use tostring") {
-            format = Format.TO_STRING
-            continue
-        } else if (loweredInput == "quit" || loweredInput == "exit") {
-            println("Bye bye")
-            break
-        }
-
-        val pendingRPC = parseCommand(input, proxy, rpcParser) ?: continue
-        execute(format, pendingRPC)
     }
 }
 
@@ -160,16 +192,10 @@ private fun parseCommand(command: String, proxy: CordaRPCOps, rpcParser: Command
     }
 }
 
-private fun execute(outputFormat: Format, pendingRPC: CommandLineRPCParser<CordaRPCOps>.ParsedRPC) {
+private fun execute(outputFormat: Format, pendingRPC: CommandLineRPCParser<CordaRPCOps>.ParsedRPC): CompletableFuture<Unit>? {
     try {
         val response = pendingRPC()
-        fun createMapper(factory: JsonFactory) = ObjectMapper(factory).apply { disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) }
-        val output = when (outputFormat) {
-            Format.YAML -> createMapper(YAMLFactory()).writeValueAsString(response)
-            Format.JSON -> createMapper(JsonFactory()).writeValueAsString(response)
-            Format.TO_STRING -> response.toString()
-        }
-        println(output)
+        return printAndFollowRPCResponse(outputFormat, response)
     } catch (e: RPCException) {
         error("RPC failed: $e")
     } catch (e: Exception) {

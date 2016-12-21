@@ -31,6 +31,79 @@ Any database browsing tool that supports JDBC can be used, but if you have Intel
 a tool integrated with your IDE. Just open the database window and add an H2 data source with the above details.
 You will now be able to browse the tables and row data within them.
 
+Command line control
+--------------------
+
+You can send arbitrary RPCs to the node from the command line using ``corda-tool``. This program supports both
+commands provided on the command line or using an interactive console. To compile it, use ``gradle tools:corda-tool:install``
+and you can then find an install under ``tools/corda-tool/build/install/corda-tool``: this directory contains
+``bin`` and ``lib`` subdirectories which can be copied elsewhere, or you can simply add the bin directory to your
+path.
+
+.. warning:: The tool has not been tested yet on Windows.
+
+To see a list of available commands, you can run ``corda-tool --help``. More detail on each command can be found
+in the `API docs for the RPC interface <api/net.corda.node.services.messaging/-corda-r-p-c-ops/index.html>`_. You
+need to provide login details in the following way:
+
+* Pass ``--user=your_username`` or set the ``$CORDA_USER`` environment variable.
+* Pass ``--password=your_password``, set the ``$CORDA_PASSWORD`` environment variable, or type it in when the
+  program runs at the terminal.
+* Pass ``--node=servername:12345`` to specify the host and port: you need the messaging address, not the HTTP
+  server address.
+* Pass ``--certs-dir=a/b/c`` to specify where the server SSL certificates can be found (this is in the ``certificates``
+  directory of the node itself), or set the ``$CORDA_CERTS_DIR`` environment variable.
+
+.. note:: The way SSL certificates are handled will change in a future release.
+
+You can also specify the ``--console`` option to drop into the console and issue commands interactively. This may
+be a better way to learn the tool.
+
+The command itself is a textual representation of a regular Java method call. The tool uses YAML syntax to concisely
+express objects and parameters to the method call, with a minor tweak to make interactive input easier.
+
+The simplest case is a method that takes no parameters at all. In that case, you just specify the name. These
+examples are all from the console mode:
+
+    >>> currentNodeTime
+    --- 1482335737.275000000
+
+Hmm. That ``---`` in front of the answer is a bit odd: it's because the default output is in YAML. Let's try
+changing that to a different output format:
+
+    >>> use json
+    >>> currentNodeTime
+    1482335804.929000000
+
+A bit better. That's still a format meant more for machines than humans though. How about:
+
+    >>> use tostring
+    >>> currentNodeTime
+    2016-12-21T15:57:24.340Z
+
+The ``use tostring`` command, or alternatively ``--format=tostring`` option on the command line, tells the tool
+to print answers using the Java ``toString()`` method which is sometimes (but not always) designed for
+consumption by technical humans:
+
+    >>> nodeIdentity
+    NodeInfo(address=NetworkMapAddress(hostAndPort=localhost:10002), legalIdentity=Notary,
+    advertisedServices=[ServiceEntry(info=corda.notary.validating, identity=corda.notary.validating|Notary),
+    ServiceEntry(info=corda.network_map, identity=corda.network_map|Notary)], physicalLocation=PhysicalLocation(
+    coordinate=WorldCoordinate(latitude=51.52, longitude=-0.1), description=London))
+
+Some commands take parameters, and those must be explicitly named. Any text after the name of the method to invoke
+is wrapped in curly braces and then parsed as a one-line YAML object. You can get a feel for YAML syntax using
+this `handy online tool <http://yaml-online-parser.appspot.com/>`_.
+
+    >>> attachmentExists id: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+    false
+
+Some commands return _observables_. These are objects that represent data pushed from the node to the client.
+The tool has some support for listening to observables if they are in certain places in the responses: if the
+method returns a plain observable, or a pair that contains an observable, the tool will sit and print out
+the things pushed by the server until you press Ctrl-C or (on UNIX) send SIGINT. This can be useful to get an
+activity stream of what the node is doing.
+
 Monitoring your node
 --------------------
 

@@ -1,10 +1,9 @@
 package net.corda.rpc
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import net.corda.core.messaging.RPCOps
+import net.corda.node.utilities.JsonSupport
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
 import java.util.concurrent.Callable
@@ -48,9 +47,8 @@ class CommandLineRPCParser<in T : RPCOps>(targetType: Class<out T>) {
     /** A map of method name to parameter names for the target type. */
     val methodParamNames: Map<String, List<String>> = targetType.declaredMethods.map { it.name to paramNamesFromMethod(it) }.toMap()
 
-    private val om = ObjectMapper(YAMLFactory()).apply {
-        registerModule(JavaTimeModule())
-    }
+    // For deserialization of the input.
+    private val om = JsonSupport.createDefaultMapper(null, YAMLFactory())
 
     inner class ParsedRPC(private val target: T?, val methodName: String, val args: Array<Any?>) : Callable<Any?> {
         operator fun invoke(): Any? = call()
