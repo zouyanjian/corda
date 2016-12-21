@@ -22,7 +22,9 @@ Security
 
 Users wanting to use the RPC library are first required to authenticate themselves with the node using a valid username
 and password. These are specified in the configuration file. Each user can be configured with a set of permissions which
-the RPC can use for fine-grain access control.
+the RPC can use for fine-grain access control. The "ALL" permission grants full access to the node. Permission is
+granted to start flows on a per-flow basis: the permission ``StartFlow.com.foo.bar.FlowName`` is used, i.e. the
+Java name of the flow class has ``StartFlow.`` prefixed to it.
 
 Observables
 -----------

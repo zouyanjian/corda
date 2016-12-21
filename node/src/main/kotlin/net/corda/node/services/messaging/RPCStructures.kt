@@ -81,7 +81,8 @@ val CURRENT_RPC_USER: ThreadLocal<User> = ThreadLocal()
 fun requirePermission(permission: String) {
     // TODO remove the NODE_USER condition once webserver doesn't need it
     val currentUser = CURRENT_RPC_USER.get()
-    val currentUserPermissions = currentUser.permissions
+    val currentUserPermissions: Set<String> = currentUser.permissions
+    if ("ALL" in currentUserPermissions) return
     if (currentUser.username != NODE_USER && permission !in currentUserPermissions) {
         throw PermissionException("User not permissioned for $permission, permissions are $currentUserPermissions")
     }
