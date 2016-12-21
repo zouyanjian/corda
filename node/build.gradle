@@ -109,10 +109,13 @@ dependencies {
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
     }
-    compile ("com.fasterxml.jackson.module:jackson-module-kotlin:${jackson_version}") {
+
+    // Jackson: serialisation to JSON, YAML, etc
+    compile ("com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version") {
         exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
     }
-    compile "com.fasterxml.jackson.core:jackson-annotations:${jackson_version}"
+    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
     // Coda Hale's Metrics: for monitoring of key statistics
     compile "io.dropwizard.metrics:metrics-core:3.1.2"

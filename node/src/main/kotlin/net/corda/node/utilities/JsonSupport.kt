@@ -1,13 +1,11 @@
 package net.corda.node.utilities
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.core.JsonParseException
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.core.*
 import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.databind.deser.std.NumberDeserializers
 import com.fasterxml.jackson.databind.deser.std.StringArrayDeserializer
 import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import net.corda.core.contracts.BusinessCalendar
 import net.corda.core.crypto.*
@@ -17,36 +15,29 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.LocalDateTime
+
+// TODO: JSON/YAML/XML/misc-non-native-format serialization is generally useful and should be refactored out of node into a separate module.
 
 /**
  * Utilities and serialisers for working with JSON representations of basic types. This adds Jackson support for
  * the java.time API, some core types, and Kotlin data classes.
  */
 object JsonSupport {
-
-    fun createDefaultMapper(identities: IdentityService): ObjectMapper {
-        val mapper = ServiceHubObjectMapper(identities)
+    fun createDefaultMapper(identities: IdentityService?, factory: JsonFactory = JsonFactory()): ObjectMapper {
+        val mapper = ServiceHubObjectMapper(identities, factory)
         mapper.enable(SerializationFeature.INDENT_OUTPUT)
         mapper.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
         mapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
 
-        val timeModule = SimpleModule("java.time")
-        timeModule.addSerializer(LocalDate::class.java, ToStringSerializer)
-        timeModule.addDeserializer(LocalDate::class.java, LocalDateDeserializer)
-        timeModule.addKeyDeserializer(LocalDate::class.java, LocalDateKeyDeserializer)
-        timeModule.addSerializer(LocalDateTime::class.java, ToStringSerializer)
 
         val cordaModule = SimpleModule("core")
         cordaModule.addSerializer(Party::class.java, PartySerializer)
-        cordaModule.addDeserializer(Party::class.java, PartyDeserializer)
+        if (identities != null)
+            cordaModule.addDeserializer(Party::class.java, PartyDeserializer)
         cordaModule.addSerializer(BigDecimal::class.java, ToStringSerializer)
         cordaModule.addDeserializer(BigDecimal::class.java, NumberDeserializers.BigDecimalDeserializer())
         cordaModule.addSerializer(SecureHash::class.java, SecureHashSerializer)
-        // It's slightly remarkable, but apparently Jackson works out that this is the only possibility
-        // for a SecureHash at the moment and tries to use SHA256 directly even though we only give it SecureHash
-        cordaModule.addDeserializer(SecureHash.SHA256::class.java, SecureHashDeserializer())
+        cordaModule.addDeserializer(SecureHash::class.java, SecureHashDeserializer())
         cordaModule.addDeserializer(BusinessCalendar::class.java, CalendarDeserializer)
 
         // For ed25519 pubkeys
@@ -62,13 +53,13 @@ object JsonSupport {
         cordaModule.addSerializer(NodeInfo::class.java, NodeInfoSerializer)
         cordaModule.addDeserializer(NodeInfo::class.java, NodeInfoDeserializer)
 
-        mapper.registerModule(timeModule)
         mapper.registerModule(cordaModule)
+        mapper.registerModule(JavaTimeModule())
         mapper.registerModule(KotlinModule())
         return mapper
     }
 
-    class ServiceHubObjectMapper(val identities: IdentityService) : ObjectMapper()
+    class ServiceHubObjectMapper(val identities: IdentityService?, factory: JsonFactory) : ObjectMapper(factory)
 
     object ToStringSerializer : JsonSerializer<Any>() {
         override fun serialize(obj: Any, generator: JsonGenerator, provider: SerializerProvider) {
@@ -76,22 +67,6 @@ object JsonSupport {
         }
     }
 
-    object LocalDateDeserializer : JsonDeserializer<LocalDate>() {
-        override fun deserialize(parser: JsonParser, context: DeserializationContext): LocalDate {
-            return try {
-                LocalDate.parse(parser.text)
-            } catch (e: Exception) {
-                throw JsonParseException(parser, "Invalid LocalDate ${parser.text}: ${e.message}")
-            }
-        }
-    }
-
-    object LocalDateKeyDeserializer : KeyDeserializer() {
-        override fun deserializeKey(text: String, p1: DeserializationContext): Any? {
-            return LocalDate.parse(text)
-        }
-
-    }
 
     object PartySerializer : JsonSerializer<Party>() {
         override fun serialize(obj: Party, generator: JsonGenerator, provider: SerializerProvider) {
@@ -106,7 +81,7 @@ object JsonSupport {
             }
             val mapper = parser.codec as ServiceHubObjectMapper
             // TODO this needs to use some industry identifier(s) not just these human readable names
-            return mapper.identities.partyFromName(parser.text) ?: throw JsonParseException(parser, "Could not find a Party with name: ${parser.text}")
+            return mapper.identities!!.partyFromName(parser.text) ?: throw JsonParseException(parser, "Could not find a Party with name: ${parser.text}")
         }
     }
 
