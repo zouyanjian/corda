@@ -12,6 +12,7 @@ import net.corda.node.services.config.NodeSSLConfiguration
 import net.corda.node.services.messaging.CordaRPCClient
 import net.corda.node.services.messaging.RPCException
 import org.apache.activemq.artemis.api.core.ActiveMQNotConnectedException
+import org.apache.activemq.artemis.api.core.ActiveMQSecurityException
 import org.fusesource.jansi.Ansi
 import org.jline.reader.*
 import org.jline.terminal.Terminal
@@ -62,23 +63,27 @@ fun main(args: Array<String>) {
         help(parser, rpcParser)
     }
 
-    fun fromArgOrEnv(arg: ArgumentAcceptingOptionSpec<String>, env: String): String {
+    fun fromArgOrEnv(arg: ArgumentAcceptingOptionSpec<String>, env: String, required: Boolean = true): String? {
         if (options.has(arg)) {
             return options.valueOf(arg)
         } else {
-            return System.getenv(env) ?: error("You must set either the --${arg.options().first()} command line flag or set the \$$env environment variable.")
+            val r = System.getenv(env)
+            if (r == null && required)
+                error("You must set either the --${arg.options().first()} command line flag or set the \$$env environment variable.")
+            else
+                return r
         }
     }
 
-    val nodeAddressStr = fromArgOrEnv(nodeArg, "CORDA_NODE")
+    val nodeAddressStr = fromArgOrEnv(nodeArg, "CORDA_NODE")!!
     val nodeAddress = try {
         HostAndPort.fromString(nodeAddressStr)
     } catch (e: IllegalArgumentException) {
         error("Could not understand or parse the node address: $nodeAddressStr")
     }
-    val certsDirStr = fromArgOrEnv(certsDirArg, "CORDA_CERTS_DIR")
-    val userStr = fromArgOrEnv(userArg, "CORDA_USER")
-    val passwordStr = fromArgOrEnv(passwordArg, "CORDA_PASSWORD")
+    val certsDirStr = fromArgOrEnv(certsDirArg, "CORDA_CERTS_DIR")!!
+    val userStr = fromArgOrEnv(userArg, "CORDA_USER")!!
+    val passwordStr = fromArgOrEnv(passwordArg, "CORDA_PASSWORD", false) ?: readPasswordFromTerminal()
     val timeout: Duration = Duration.ofMillis((options.valueOf(timeoutArg) * 1000).toLong())
     val outputFormat: Format = options.valueOf(outputFormatArg)
 
@@ -92,6 +97,8 @@ fun main(args: Array<String>) {
         } catch (e: ActiveMQNotConnectedException) {
             // Artemis already splatted an exception to the screen by this point :(
             error("Failed to connect to $nodeAddress - are you trying to connect to an HTTP port instead of an AMQP port by mistake?")
+        } catch (e: ActiveMQSecurityException) {
+            error("Failed to authenticate to server: check your password and SSL certificates.")
         }
 
         val proxy = it.proxy(timeout)
@@ -101,6 +108,16 @@ fun main(args: Array<String>) {
         } else {
             runOneShotCommand(options, outputFormat, proxy, rpcParser)
         }
+    }
+}
+
+fun readPasswordFromTerminal(): String {
+    TerminalBuilder.terminal().use { term ->
+        var result: String? = null
+        while (result == null) {
+            result = LineReaderBuilder.builder().terminal(term).build().readLine("Password: ", '•')
+        }
+        return result
     }
 }
 
