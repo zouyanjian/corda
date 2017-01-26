@@ -20,3 +20,6 @@ include 'samples:network-visualiser'
 include 'samples:simm-valuation-demo'
 include 'samples:raft-notary-demo'
 include 'samples:bank-of-corda-demo'
+include 'tools:performance-test'
+findProject(':tools:performance-test')?.name = 'performance-test'
+
