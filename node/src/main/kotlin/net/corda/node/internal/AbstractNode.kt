@@ -115,6 +115,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         override val clock: Clock = platformClock
         override val myInfo: NodeInfo get() = info
         override val schemaService: SchemaService get() = schemas
+        override val transactionVerifierService: TransactionVerifierService get() = txVerifierService
 
         // Internal only
         override val monitoringService: MonitoringService = MonitoringService(MetricRegistry())
@@ -152,6 +153,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     var inNodeNetworkMapService: NetworkMapService? = null
     var inNodeNotaryService: NotaryService? = null
     var uniquenessProvider: UniquenessProvider? = null
+    lateinit var txVerifierService: TransactionVerifierService
     lateinit var identity: IdentityService
     lateinit var net: MessagingServiceInternal
     lateinit var netMapCache: NetworkMapCache
@@ -203,6 +205,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
             net = makeMessagingService()
             schemas = makeSchemaService()
             vault = makeVaultService()
+            txVerifierService = makeTransactionVerifierService()
 
             info = makeInfo()
             identity = makeIdentityService()
@@ -454,6 +457,8 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     protected open fun makeVaultService(): VaultService = NodeVaultService(services)
 
     protected open fun makeSchemaService(): SchemaService = NodeSchemaService()
+
+    protected open fun makeTransactionVerifierService() = InMemoryTransactionVerifierService(numberOfWorkers = 4)
 
     open fun stop() {
         // TODO: We need a good way of handling "nice to have" shutdown events, especially those that deal with the

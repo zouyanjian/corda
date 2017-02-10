@@ -25,6 +25,7 @@ interface ServiceHub {
     val networkService: MessagingService
     val networkMapCache: NetworkMapCache
     val schedulerService: SchedulerService
+    val transactionVerifierService: TransactionVerifierService
     val clock: Clock
     val myInfo: NodeInfo
 

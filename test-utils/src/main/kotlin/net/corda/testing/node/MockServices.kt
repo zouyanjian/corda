@@ -16,6 +16,7 @@ import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.DUMMY_NOTARY
 import net.corda.node.services.persistence.InMemoryStateMachineRecordedTransactionMappingStorage
+import net.corda.node.services.transactions.InMemoryTransactionVerifierService
 import net.corda.testing.MEGA_CORP
 import net.corda.testing.MINI_CORP
 import rx.Observable
@@ -63,6 +64,7 @@ open class MockServices(val key: KeyPair = generateKeyPair()) : ServiceHub {
     override val clock: Clock get() = throw UnsupportedOperationException()
     override val schedulerService: SchedulerService get() = throw UnsupportedOperationException()
     override val myInfo: NodeInfo get() = NodeInfo(object : SingleMessageRecipient {}, Party("MegaCorp", key.public.composite))
+    override val transactionVerifierService: TransactionVerifierService get() = InMemoryTransactionVerifierService(2)
 }
 
 @ThreadSafe
