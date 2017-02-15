@@ -11,7 +11,6 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
-import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.transactions.SignedTransaction
@@ -63,22 +62,9 @@ sealed class TransactionCreateStatus(val message: String?) {
     override fun toString(): String = message ?: javaClass.simpleName
 }
 
-class FlowStatus(
-        val status: String,
-        pt: ProgressTrackingEvent?,
-        val progress: FlowLogic.ProgressTrackerDisplayProxy = convert(pt)
-) {
-
-    companion object {
-        fun convert(pt: ProgressTrackingEvent?) : FlowLogic.ProgressTrackerDisplayProxy {
-            return FlowLogic.ProgressTrackerDisplayProxy(null, false, false)
-/*                    pt?. == ProgressTracker.DONE,
-                    pt == null)*/
-        }
-    }
-}
-
-
+data class FlowStatus(
+        val status: String
+)
 
 sealed class StateMachineStatus(val stateMachineName: String) {
     class Added(stateMachineName: String) : StateMachineStatus(stateMachineName)
@@ -128,17 +114,8 @@ class TransactionDataModel {
         }
     }
 
-    val stateMachineDataList = LeftOuterJoinedMap(stateMachineStatus, progressEvents) {
-        id, status, progress ->
-        Bindings.createObjectBinding(
-                { StateMachineData(id,
-//                        FlowStatus(progress.value?.message!!, null),
-                        progress.value?.message?.let{
-                            FlowStatus(progress.value!!.message!!.toString(),progress.value)
-                        },
-                        status.get()) }
-                , arrayOf(progress, status)
-        )
+    val stateMachineDataList = LeftOuterJoinedMap(stateMachineStatus, progressEvents) { id, status, progress ->
+        Bindings.createObjectBinding({ StateMachineData(id, progress.value?.message?.let(::FlowStatus), status.get()) }, arrayOf(progress, status))
     }.getObservableValues().flatten()
 
     /*
@@ -186,14 +163,7 @@ class StateMachineDataModel {
 
 
     val stateMachineDataList = LeftOuterJoinedMap(stateMachineStatus, progressEvents) { id, status, progress ->
-        Bindings.createObjectBinding({
-            StateMachineData(id,
-                    progress.value?.message?.let{
-                        FlowStatus(progress.value!!.message!!.toString(),null)
-                    },
-//                    progress.value?.message?.let(::FlowStatus),
-                    status.get())
-        }, arrayOf(progress, status))
+        Bindings.createObjectBinding({ StateMachineData(id, progress.value?.message?.let(::FlowStatus), status.get()) }, arrayOf(progress, status))
     }.getObservableValues().flatten()
 
     /*

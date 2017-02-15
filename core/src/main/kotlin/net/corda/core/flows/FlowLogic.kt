@@ -199,6 +199,7 @@ abstract class FlowLogic<out T> {
                     ProgressTrackerDisplayProxy(
                             it.changes.map{ it.toString()},
                             false, false)
+            )
 
 //                it.toString()
             })
