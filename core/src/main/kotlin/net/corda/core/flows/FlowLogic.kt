@@ -186,6 +186,27 @@ abstract class FlowLogic<out T> {
         return stateMachine.waitForLedgerCommit(hash, this)
     }
 
+    data class ProgressTrackerDisplayProxy(
+            val stuff: Observable<String>?,
+            val finished: Boolean,
+            val isNull: Boolean
+    ) { }
+/*
+    fun newTrack(): Pair<String, Observable<ProgressTrackerDisplayProxy>>? {
+        // TODO this is not threadsafe, needs an atomic get-step-and-subscribe
+        return progressTracker?.let {
+            Pair(it.currentStep.toString(),
+                    ProgressTrackerDisplayProxy(
+                            it.changes.map{ it.toString()},
+                            false, false)
+
+//                it.toString()
+            })
+        }
+    }
+*/
+
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     private var _stateMachine: FlowStateMachine<*>? = null

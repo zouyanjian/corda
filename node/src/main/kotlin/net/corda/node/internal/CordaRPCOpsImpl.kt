@@ -148,7 +148,9 @@ class CordaRPCOpsImpl(
 
     companion object {
         private fun stateMachineInfoFromFlowLogic(id: StateMachineRunId, flowLogic: FlowLogic<*>): StateMachineInfo {
-            return StateMachineInfo(id, flowLogic.javaClass.name, flowLogic.track())
+            flowLogic.stateMachine.id
+                    // flowLogic.
+            return StateMachineInfo(id, 0 , flowLogic.javaClass.name, flowLogic.track() ) // TODO: RG  - replace 0 with sessionId
         }
 
         private fun stateMachineUpdateFromStateMachineChange(change: StateMachineManager.Change): StateMachineUpdate {

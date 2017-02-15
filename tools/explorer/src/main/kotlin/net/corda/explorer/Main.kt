@@ -111,6 +111,7 @@ class Main : App(MainView::class) {
             // Stock Views.
             registerView<Dashboard>()
             registerView<TransactionViewer>()
+            registerView<FlowViewer>()
             // CordApps Views.
             registerView<CashViewer>()
             // Tools.
@@ -144,19 +145,19 @@ fun main(args: Array<String>) {
         )
         // TODO : Supported flow should be exposed somehow from the node instead of set of ServiceInfo.
         val notary = startNode("Notary", advertisedServices = setOf(ServiceInfo(SimpleNotaryService.type)),
-                                    customOverrides = mapOf("nearestCity" to "Zurich"))
+                customOverrides = mapOf("nearestCity" to "Zurich"))
         val alice = startNode("Alice", rpcUsers = arrayListOf(user),
-                                    advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("cash"))),
-                                    customOverrides = mapOf("nearestCity" to "Milan"))
+                advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("cash"))),
+                customOverrides = mapOf("nearestCity" to "Milan"))
         val bob = startNode("Bob", rpcUsers = arrayListOf(user),
-                                    advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("cash"))),
-                                    customOverrides = mapOf("nearestCity" to "Madrid"))
+                advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("cash"))),
+                customOverrides = mapOf("nearestCity" to "Madrid"))
         val issuerGBP = startNode("UK Bank Plc", rpcUsers = arrayListOf(manager),
-                                    advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("issuer.GBP"))),
-                                    customOverrides = mapOf("nearestCity" to "London"))
+                advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("issuer.GBP"))),
+                customOverrides = mapOf("nearestCity" to "London"))
         val issuerUSD = startNode("USA Bank Corp", rpcUsers = arrayListOf(manager),
-                                    advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("issuer.USD"))),
-                                    customOverrides = mapOf("nearestCity" to "New York"))
+                advertisedServices = setOf(ServiceInfo(ServiceType.corda.getSubType("issuer.USD"))),
+                customOverrides = mapOf("nearestCity" to "New York"))
 
         val notaryNode = notary.get()
         val aliceNode = alice.get()
@@ -207,7 +208,7 @@ fun main(args: Array<String>) {
             )
 
             for (i in 0..1000) {
-                Thread.sleep(500)
+                Thread.sleep(5000)
                 // Party pay requests
                 listOf(aliceRPC, bobRPC).forEach {
                     eventGenerator.clientCommandGenerator.map { command ->
