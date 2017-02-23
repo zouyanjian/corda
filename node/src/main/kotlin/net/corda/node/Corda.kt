@@ -10,7 +10,6 @@ import net.corda.core.node.Version
 import net.corda.core.utilities.Emoji
 import net.corda.node.internal.Node
 import net.corda.node.services.config.FullNodeConfiguration
-import net.corda.node.utilities.ANSIProgressObserver
 import net.corda.node.utilities.registration.HTTPNetworkRegistrationService
 import net.corda.node.utilities.registration.NetworkRegistrationHelper
 import org.fusesource.jansi.Ansi
@@ -18,6 +17,7 @@ import org.fusesource.jansi.AnsiConsole
 import org.slf4j.LoggerFactory
 import java.lang.management.ManagementFactory
 import java.net.InetAddress
+import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
@@ -79,7 +79,8 @@ fun main(args: Array<String>) {
 
     drawBanner(nodeVersionInfo)
 
-    System.setProperty("log-path", (cmdlineOptions.baseDirectory / "logs").toString())
+    val dir: Path = cmdlineOptions.baseDirectory.normalize()
+    System.setProperty("log-path", (dir / "logs").toString())
 
     val log = LoggerFactory.getLogger("Main")
     printBasicNodeInfo("Logs can be found in", System.getProperty("log-path"))
@@ -128,8 +129,11 @@ fun main(args: Array<String>) {
             val elapsed = (System.currentTimeMillis() - startTime) / 10 / 100.0
             printBasicNodeInfo("Node started up and registered in $elapsed sec")
 
-            if (renderBasicInfoToConsole)
-                ANSIProgressObserver(node.smm)
+            // Don't start the shell if there's no console attached.
+            val runShell = !cmdlineOptions.noLocalShell && System.console() != null
+            node.startupComplete.thenAccept {
+                InteractiveShell.startShell(dir, runShell, cmdlineOptions.sshdServer, node)
+            }
         } failure {
             log.error("Error during network map registration", it)
             exitProcess(1)
