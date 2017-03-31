@@ -13,19 +13,19 @@ apply plugin: 'maven-publish'
 sourceSets {
     main {
         resources {
-            srcDir "../../config/dev"
+            srcDir "$rootDir/config/dev"
         }
     }
     test {
         resources {
-            srcDir "../../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            srcDir file('src/integration-test/kotlin')
+            srcDir file("$projectDir/src/integration-test/kotlin")
         }
     }
 }
@@ -66,7 +66,7 @@ dependencies {
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['build']) {
-    directory "./build/nodes"
+    directory "$buildDir/nodes"
     networkMap "Controller"
     node {
         name "Controller"

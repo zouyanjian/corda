@@ -32,7 +32,7 @@ configurations {
 sourceSets {
     runnodes {
         kotlin {
-            srcDir file('src/noderunner/kotlin')
+            srcDir file("$projectDir/src/noderunner/kotlin")
             compileClasspath += configurations.noderunner
         }
     }

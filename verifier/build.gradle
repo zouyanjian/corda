@@ -15,17 +15,17 @@ sourceSets {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            srcDir file('src/integration-test/kotlin')
+            srcDir file("$projectDir/src/integration-test/kotlin")
         }
     }
     test {
         resources {
-            srcDir "../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
     main {
         resources {
-            srcDir "../config/dev"
+            srcDir "$rootDir/config/dev"
         }
     }
 }
@@ -36,11 +36,11 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    compile "org.apache.activemq:artemis-core-client:${artemis_version}"
+    compile "org.apache.activemq:artemis-core-client:$artemis_version"
 
     // Log4J: logging framework (with SLF4J bindings)
-    compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
-    compile "org.apache.logging.log4j:log4j-core:${log4j_version}"
+    compile "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version"
+    compile "org.apache.logging.log4j:log4j-core:$log4j_version"
 
     integrationTestCompile project(":test-utils")
     integrationTestCompile project(":client:mock")
@@ -48,7 +48,7 @@ dependencies {
     // Integration test helpers
     integrationTestCompile "junit:junit:$junit_version"
 
-    integrationTestCompile "org.apache.activemq:artemis-server:${artemis_version}"
+    integrationTestCompile "org.apache.activemq:artemis-server:$artemis_version"
 }
 
 task standaloneJar(type: Jar) {

@@ -4,21 +4,15 @@ apply plugin: 'net.corda.plugins.publish-utils'
 
 description 'Corda node Artemis API'
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
-
 sourceSets {
     test {
         resources {
-            srcDir "../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
     main {
         resources {
-            srcDir "../config/dev"
+            srcDir "$rootDir/config/dev"
         }
     }
 }

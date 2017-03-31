@@ -1,23 +1,35 @@
 apply plugin: 'org.jetbrains.dokka'
 apply plugin: 'kotlin'
 
-dependencies {
-    compile rootProject
-}
-
 dokka {
     moduleName = 'corda'
-    outputDirectory = file("${rootProject.rootDir}/docs/build/html/api/kotlin")
+    outputDirectory = file("$rootDir/docs/build/html/api/kotlin")
     processConfigurations = ['compile']
-    sourceDirs = files('../core/src/main/kotlin', '../client/jfx/src/main/kotlin', '../client/mock/src/main/kotlin', '../client/rpc/src/main/kotlin', '../node/src/main/kotlin', '../finance/src/main/kotlin', '../client/jackson/src/main/kotlin')
+    sourceDirs = files(
+        "$rootDir/core/src/main/kotlin",
+        "$rootDir/client/jfx/src/main/kotlin",
+        "$rootDir/client/mock/src/main/kotlin",
+        "$rootDir/client/rpc/src/main/kotlin",
+        "$rootDir/node/src/main/kotlin",
+        "$rootDir/finance/src/main/kotlin",
+        "$rootDir/client/jackson/src/main/kotlin"
+    )
 }
 
 task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
     moduleName = 'corda'
     outputFormat = "javadoc"
-    outputDirectory = file("${rootProject.rootDir}/docs/build/html/api/javadoc")
+    outputDirectory = file("$rootDir/docs/build/html/api/javadoc")
     processConfigurations = ['compile']
-    sourceDirs = files('../core/src/main/kotlin', '../client/jfx/src/main/kotlin', '../client/mock/src/main/kotlin', '../client/rpc/src/main/kotlin', '../node/src/main/kotlin', '../finance/src/main/kotlin', '../client/jackson/src/main/kotlin')
+    sourceDirs = files(
+        "$rootDir/core/src/main/kotlin",
+        "$rootDir/client/jfx/src/main/kotlin",
+        "$rootDir/client/mock/src/main/kotlin",
+        "$rootDir/client/rpc/src/main/kotlin",
+        "$rootDir/node/src/main/kotlin",
+        "$rootDir/finance/src/main/kotlin",
+        "$rootDir/client/jackson/src/main/kotlin"
+    )
 }
 
 task buildDocs(dependsOn: ['apidocs', 'makeDocs'])

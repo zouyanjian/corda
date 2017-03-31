@@ -4,7 +4,7 @@ apply plugin: 'application'
 sourceSets {
     main {
         resources {
-            srcDir "../../config/dev"
+            srcDir "$rootDir/config/dev"
         }
     }
 }

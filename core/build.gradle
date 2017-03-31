@@ -13,7 +13,7 @@ buildscript {
 sourceSets {
     test {
         resources {
-            srcDir "../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
 }
@@ -27,7 +27,6 @@ dependencies {
     testCompile "com.google.guava:guava-testlib:$guava_version"
 
     // Bring in the MockNode infrastructure for writing protocol unit tests.
-    testCompile project(":node")
     testCompile project(":test-utils")
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"

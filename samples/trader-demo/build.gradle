@@ -9,19 +9,19 @@ apply plugin: 'maven-publish'
 sourceSets {
     main {
         resources {
-            srcDir "../../config/dev"
+            srcDir "$rootDir/config/dev"
         }
     }
     test {
         resources {
-            srcDir "../../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            srcDir file('src/integration-test/kotlin')
+            srcDir file("$projectDir/src/integration-test/kotlin")
         }
     }
 }
@@ -64,7 +64,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['build']) {
             "StartFlow.net.corda.traderdemo.flow.SellerFlow"
     ]]]
 
-    directory "./build/nodes"
+    directory "$buildDir/nodes"
     // This name "Notary" is hard-coded into TraderDemoClientApi so if you change it here, change it there too.
     // In this demo the node that runs a standalone notary also acts as the network map server.
     networkMap "Notary"

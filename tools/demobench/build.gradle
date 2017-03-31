@@ -92,13 +92,13 @@ distributions {
     main() {
         contents {
             into('lib/linux') {
-                from 'libs/linux'
+                from "$projectDir/libs/linux"
             }
             into('lib/macosx') {
-                from 'libs/macosx'
+                from "$projectDir/libs/macosx"
             }
             into('lib/win') {
-                from 'libs/win'
+                from "$projectDir/libs/win"
             }
             from(project(':tools:explorer:capsule').tasks.buildExplorerJAR) {
                 rename 'node-explorer-(.*)', 'node-explorer.jar'

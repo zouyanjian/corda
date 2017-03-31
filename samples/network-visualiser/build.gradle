@@ -19,7 +19,7 @@ dependencies {
     testCompile project(':test-utils')
 
     // Javax is required for webapis
-    compile "org.glassfish.jersey.core:jersey-server:${jersey_version}"
+    compile "org.glassfish.jersey.core:jersey-server:$jersey_version"
 
     // Cordapp dependencies
     // GraphStream: For visualisation

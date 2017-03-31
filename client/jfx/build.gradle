@@ -18,12 +18,12 @@ sourceSets {
         kotlin {
             compileClasspath += main.output + test.output
             runtimeClasspath += main.output + test.output
-            srcDir file('src/integration-test/kotlin')
+            srcDir file("$projectDir/src/integration-test/kotlin")
         }
     }
     test {
         resources {
-            srcDir "../../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
 }

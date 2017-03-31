@@ -13,7 +13,7 @@ configurations {
 sourceSets {
     test {
         resources {
-            srcDir "../../config/test"
+            srcDir "$rootDir/config/test"
         }
     }
 }
