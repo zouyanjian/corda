@@ -37,7 +37,7 @@ task buildExplorerJAR(type: FatCapsule) {
 
     capsuleManifest {
         applicationVersion = corda_version
-        systemProperties['visualvm.display.name'] = 'Node Explorer'
+        systemProperties['visualvm.display.name'] = 'NodeExplorer'
         minJavaVersion = '1.8.0'
         // This version is known to work and avoids earlier 8u versions that have bugs.
         minUpdateVersion['1.8'] = '102'
@@ -46,8 +46,6 @@ task buildExplorerJAR(type: FatCapsule) {
         // JVM configuration:
         // - Constrain to small heap sizes to ease development on low end devices.
         // - Switch to the G1 GC which is going to be the default in Java 9 and gives low pause times/string dedup.
-        //
-        // If you change these flags, please also update Driver.kt
         jvmArgs = ['-Xmx200m', '-XX:+UseG1GC']
     }
 
