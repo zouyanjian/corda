@@ -145,6 +145,13 @@ fun <T : Any> T.serialize(kryo: KryoPool = p2PKryo(), internalOnly: Boolean = fa
 }
 
 fun <T : Any> T.serialize(kryo: Kryo, internalOnly: Boolean = false): SerializedBytes<T> {
+    if (!(this is WireTransaction) && !kryo.context.containsKey(false)) {
+        try {
+            return KryoCache.SerialisationCache.get(this)
+        } catch (e: Exception) {
+            println(e)
+        }
+    }
     val stream = ByteArrayOutputStream()
     Output(stream).use {
         it.writeBytes(KryoHeaderV0_1.bytes)
@@ -368,7 +375,7 @@ object Ed25519PublicKeySerializer : Serializer<EdDSAPublicKey>() {
 
     override fun read(kryo: Kryo, input: Input, type: Class<EdDSAPublicKey>): EdDSAPublicKey {
         val A = input.readBytesWithLength()
-        return EdDSAPublicKey(EdDSAPublicKeySpec(A, ed25519Curve))
+        return PublicKeyCache.get(EdDSAPublicKey(EdDSAPublicKeySpec(A, ed25519Curve))) as EdDSAPublicKey
     }
 }
 
