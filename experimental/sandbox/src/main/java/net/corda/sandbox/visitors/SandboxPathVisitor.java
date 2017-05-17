@@ -30,7 +30,7 @@ public final class SandboxPathVisitor extends SimpleFileVisitor<Path> {
     public FileVisitResult visitFile(final Path path, final BasicFileAttributes attr) {
         // Check that this is a class file
         if (!path.toString().matches(Utils.CLASSFILE_NAME_SUFFIX)) {
-            System.out.println("Skipping: "+ path);
+            System.out.println("Skipping: " + path);
             return FileVisitResult.CONTINUE;
         }
         

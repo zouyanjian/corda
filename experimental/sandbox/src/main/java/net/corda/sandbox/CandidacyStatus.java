@@ -1,12 +1,14 @@
 package net.corda.sandbox;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import java.net.URL;
 import java.util.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents the status of the candidacy of a particular set of candidate methods, i.e. Their progress from
@@ -72,8 +74,8 @@ public class CandidacyStatus {
             for (String s : baseCandidacyStatus.readLinesFromFile(startingSet)) {
                 baseCandidacyStatus.putIfAbsent(s, CandidateMethod.proven(s));
             }
-        } catch (IOException | URISyntaxException ex) {
-            throw new RuntimeException(ex);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex.getMessage(), ex);
         }
 
         return baseCandidacyStatus;
@@ -119,9 +121,14 @@ public class CandidacyStatus {
         }
     }
 
-    public List<String> readLinesFromFile(final String fName) throws IOException, URISyntaxException {
-        final Path p = Paths.get(getClass().getClassLoader().getResource(fName).toURI());
-        return Files.readAllLines(p);
+    public List<String> readLinesFromFile(final String fName) throws IOException {
+        final URL resource = getClass().getClassLoader().getResource(fName);
+        if (resource == null) {
+            throw new FileNotFoundException(fName);
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.openStream(), UTF_8))) {
+            return reader.lines().collect(toList());
+        }
     }
 
     public boolean isLoadable() {

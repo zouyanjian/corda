@@ -531,6 +531,7 @@ java/lang/Exception.<init>:()V
 java/lang/Exception.<init>:(Ljava/lang/String;)V
 java/lang/Exception.<init>:(Ljava/lang/String;Ljava/lang/Throwable;)V
 java/lang/Exception.<init>:(Ljava/lang/String;Ljava/lang/Throwable;ZZ)V
+java/lang/ExceptionInInitializerError.<init>:(Ljava/lang/Throwable;)V
 java/lang/ExceptionInInitializerError.getCause:()Ljava/lang/Throwable;
 java/lang/ExceptionInInitializerError.getException:()Ljava/lang/Throwable;
 java/lang/Float.<init>:(D)V

@@ -2,7 +2,6 @@ package net.corda.sandbox.visitors;
 
 import net.corda.sandbox.WhitelistClassLoader;
 import net.corda.sandbox.CandidacyStatus;
-import java.util.Arrays;
 
 import net.corda.sandbox.CandidateMethod;
 import net.corda.sandbox.Utils;
@@ -70,9 +69,8 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
      */
     @Override
     public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Visiting method with: access [" + access + "], name [" + currentClassName + "::" + name + "], signature [" + signature + "], desc ["
-                    + desc + "] and exceptions [" + Arrays.toString(exceptions) + "]");
+        LOGGER.debug("Visiting method with: access [{}], name [{}::{}], signature [{}], desc [{}] and exceptions [{}]",
+                access, currentClassName, name, signature, desc, exceptions);
 
         // Force new access control flags - for now just strictfp for deterministic
         // compliance to IEEE 754
@@ -98,7 +96,7 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
         }
 
         // Native methods are completely disallowed
-        if ((access & Opcodes.ACC_NATIVE) > 0) {
+        if ((access & Opcodes.ACC_NATIVE) != 0) {
             candidacyStatus.setLoadable(false);
             candidacyStatus.setReason("Method " + internalName + " is native");
             return new DefinitelyDisallowedMethodVisitor(baseMethodVisitor);
@@ -133,6 +131,9 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
                     // as part of the same call). The scan needs to happen on the
                     // methods we *refer* to, not the current method
                     for (final CandidateMethod referred : candidateMethod.getReferencedCandidateMethods()) {
+                        if (referred.isDeterministic()) {
+                            continue;
+                        }
                         final String internalName = referred.getInternalMethodName();
 
                         final String toLoadQualified = Utils.convertInternalMethodNameToQualifiedClassName(internalName);
@@ -140,7 +141,7 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
                                 || resolveState(toLoadQualified) == CandidateMethod.State.DISALLOWED) {
                             referred.disallowed(internalName + " is DISALLOWED");
                             candidacyStatus.setLoadable(false);
-                            candidacyStatus.setReason(candidateMethod.getReason());
+                            candidacyStatus.setReason(referred.getReason());
                             break METHODS;
                         }
                     }
@@ -157,7 +158,7 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
      * @return 
      */
     CandidateMethod.State resolveState(final String qualifiedClassname) {
-        Class<?> clz = null;
+        Class<?> clz;
         try {
             candidacyStatus.incRecursiveCount();
             final ClassLoader loader = WhitelistClassLoader.of(candidacyStatus.getContextLoader());
@@ -167,7 +168,7 @@ public final class WhitelistCheckingClassVisitor extends ClassVisitor {
             return CandidateMethod.State.DISALLOWED;
         }
         if (clz == null) {
-            LOGGER.error("Couldn't load: " + qualifiedClassname);
+            LOGGER.error("Couldn't load: {}", qualifiedClassname);
             return CandidateMethod.State.DISALLOWED;
         }
 

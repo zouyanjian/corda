@@ -24,52 +24,51 @@ import joptsimple.OptionSet;
 public final class SandboxCreator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SandboxCreator.class);
-    private static final String USAGE_STRING = "Usage: SandboxCreator <classes root dir> <output sandbox jar>";
 
-    private final String basePathName;
+    private final Path basePathName;
     private final String outputJarName;
     private final WhitelistClassLoader wlcl;
     private final boolean hasInputJar;
     
     private final static OptionParser parser = new OptionParser();
 
-    private static void usage() {
-        System.err.println(USAGE_STRING);
-    }
-
-    private SandboxCreator(final OptionSet options) throws URISyntaxException {
-        basePathName = (String) (options.valueOf("dir"));
+    private SandboxCreator(final OptionSet options) {
+        basePathName = Paths.get((String) (options.valueOf("dir")));
         outputJarName = (String) (options.valueOf("out"));
         wlcl = WhitelistClassLoader.of(basePathName, true);
         hasInputJar = false;
     }
 
-    private SandboxCreator(final String tmpDirName, final OptionSet options) throws URISyntaxException {
+    private SandboxCreator(final Path tmpDirName, final OptionSet options) {
         basePathName = tmpDirName;
         outputJarName = (String) (options.valueOf("out"));
         wlcl = WhitelistClassLoader.of(basePathName, true);
         hasInputJar = true;
     }
 
-    static String unpackJar(final String zipFilePath) throws IOException {
-        final Path tmpDir = Files.createTempDirectory(Paths.get("/tmp"), "wlcl-extract");
+    static Path unpackJar(final String zipFilePath) throws IOException {
+        final Path tmpDir = Files.createTempDirectory("wlcl-extract");
         
         try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))) {
             ZipEntry entry = zipIn.getNextEntry();
 
             while (entry != null) {
                 final Path newFile = tmpDir.resolve(entry.getName());
-                if (!entry.isDirectory()) {
-                    Files.copy(zipIn, newFile);
+                if (entry.isDirectory()) {
+                    Files.createDirectories(newFile);
                 } else {
-                    Files.createDirectory(newFile);
+                    Path parent = newFile.getParent();
+                    if (!parent.toFile().isDirectory()) {
+                        Files.createDirectories(parent);
+                    }
+                    Files.copy(zipIn, newFile);
                 }
                 zipIn.closeEntry();
                 entry = zipIn.getNextEntry();
             }
         }
         
-        return tmpDir.toString();
+        return tmpDir;
     }
     
     void cleanup() {
@@ -78,10 +77,10 @@ public final class SandboxCreator {
         }
     }
 
-    public static SandboxCreator of(final OptionSet options) throws URISyntaxException, IOException {
+    public static SandboxCreator of(final OptionSet options) throws IOException {
         final String inputJarName = (String) (options.valueOf("jar"));
         if (inputJarName != null) {
-            final String tmpDirName = unpackJar(inputJarName);
+            final Path tmpDirName = unpackJar(inputJarName);
             return new SandboxCreator(tmpDirName, options);
         }
         return new SandboxCreator(options);
@@ -113,9 +112,8 @@ public final class SandboxCreator {
      * @throws IOException 
      */
     void walk() throws IOException {
-        final Path scanDir = Paths.get(basePathName);
-        final SandboxPathVisitor visitor = new SandboxPathVisitor(wlcl, scanDir);
-        Files.walkFileTree(scanDir, visitor);
+        final SandboxPathVisitor visitor = new SandboxPathVisitor(wlcl, basePathName);
+        Files.walkFileTree(basePathName, visitor);
     }
 
     private void writeJar() throws IOException, URISyntaxException {

@@ -22,7 +22,7 @@ final class WhitelistCheckingMethodVisitor extends MethodVisitor {
     private final CandidacyStatus candidacyStatus;
     private final String currentMethodName;
 
-    public WhitelistCheckingMethodVisitor(final MethodVisitor methodVisitor, final CandidacyStatus initialCandidacyStatus, String methodName) {
+    WhitelistCheckingMethodVisitor(final MethodVisitor methodVisitor, final CandidacyStatus initialCandidacyStatus, String methodName) {
         super(Opcodes.ASM5, methodVisitor);
         candidacyStatus = initialCandidacyStatus;
         currentMethodName = methodName;
@@ -46,24 +46,18 @@ final class WhitelistCheckingMethodVisitor extends MethodVisitor {
         final CandidateMethod referencedCandidateMethod = candidacyStatus.getCandidateMethod(internalName);
         candidateMethod.addReferencedCandidateMethod(referencedCandidateMethod);
 
-        final String methodDetails = owner + " name [" + name + "], desc [" + desc + "]";
-
         switch (opcode) {
             case Opcodes.INVOKEVIRTUAL:
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug("Visiting with INVOKEVIRTUAL: " + methodDetails);
+                LOGGER.debug("Visiting with INVOKEVIRTUAL: {} name [{}], desc [{}]", owner, name, desc);
                 break;
             case Opcodes.INVOKESTATIC:
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug("Visiting with INVOKESTATIC: " + methodDetails);
+                LOGGER.debug("Visiting with INVOKESTATIC: {} name [{}], desc [{}]", owner, name, desc);
                 break;
             case Opcodes.INVOKESPECIAL:
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug("Visiting with INVOKESPECIAL: " + methodDetails);
+                LOGGER.debug("Visiting with INVOKESPECIAL: {} name [{}], desc [{}]", owner, name, desc);
                 break;
             case Opcodes.INVOKEINTERFACE:
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug("Visiting with INVOKEINTERFACE: " + methodDetails);
+                LOGGER.debug("Visiting with INVOKEINTERFACE: {} name [{}], desc [{}]", owner, name, desc);
                 break;
             // NOTE: case Opcodes.INVOKEDYNAMIC is handled by the visitInvokeDynamicInsn call
             default:
@@ -73,11 +67,8 @@ final class WhitelistCheckingMethodVisitor extends MethodVisitor {
 
     @Override
     public void visitTryCatchBlock(final Label start, final Label end, final Label handler, final String type) {
-        if (type == null)
-            throw new IllegalArgumentException("Exception type must not be null in try/catch block in " + currentMethodName);
-
         // Forcible disallow attempts to catch ThreadDeath or any throwable superclass - preserve determinism
-        if (type.equals(Utils.THREAD_DEATH) || type.equals(Utils.ERROR) || type.equals(Utils.THROWABLE)) {
+        if ((type != null) && (type.equals(Utils.THREAD_DEATH) || type.equals(Utils.ERROR) || type.equals(Utils.THROWABLE))) {
             final CandidateMethod candidateMethod = candidacyStatus.getCandidateMethod(currentMethodName);
             candidateMethod.disallowed("Method " + currentMethodName + " attempts to catch ThreadDeath, Error or Throwable");
         }
@@ -122,8 +113,7 @@ final class WhitelistCheckingMethodVisitor extends MethodVisitor {
     public void visitInvokeDynamicInsn(final String name, final String desc, final Handle bsm, final Object... bsmArgs) {
         final String methodDetails = "name [" + name + "], desc [" + desc + "]";
         final CandidateMethod candidateMethod = candidacyStatus.getCandidateMethod(currentMethodName);
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Visiting with INVOKEDYNAMIC:" + methodDetails);
+        LOGGER.debug("Visiting with INVOKEDYNAMIC:{}", methodDetails);
         candidateMethod.disallowed("InvokeDynamic in " + currentMethodName + " with " + methodDetails);
     }
 
@@ -157,8 +147,9 @@ final class WhitelistCheckingMethodVisitor extends MethodVisitor {
                     break CHECK;
                 case SCANNED:
                     checkState = CandidateMethod.State.MENTIONED;
-                    if (referredMethod != candidateMethod)
+                    if ((checkState != candidateMethod.getCurrentState()) && (referredMethod != candidateMethod)) {
                         throw new IllegalStateException("Illegal state of method " + referredMethod.getInternalMethodName() + " occurred when visiting method " + currentMethodName);
+                    }
                     break;
                 default:
                     throw new IllegalStateException("Illegal state occurred when visiting method " + currentMethodName);

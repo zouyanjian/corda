@@ -13,33 +13,13 @@ public class RuntimeCostAccounter {
 
     private static Thread primaryThread;
 
-    private static final ThreadLocal<Long> allocationCost = new ThreadLocal<Long>() {
-        @Override
-        protected Long initialValue() {
-            return 0L;
-        }
-    };
+    private static final ThreadLocal<Long> allocationCost = ThreadLocal.withInitial(() -> 0L);
 
-    private static final ThreadLocal<Long> jumpCost = new ThreadLocal<Long>() {
-        @Override
-        protected Long initialValue() {
-            return 0L;
-        }
-    };
+    private static final ThreadLocal<Long> jumpCost = ThreadLocal.withInitial(() -> 0L);
 
-    private static final ThreadLocal<Long> invokeCost = new ThreadLocal<Long>() {
-        @Override
-        protected Long initialValue() {
-            return 0L;
-        }
-    };
+    private static final ThreadLocal<Long> invokeCost = ThreadLocal.withInitial(() -> 0L);
 
-    private static final ThreadLocal<Long> throwCost = new ThreadLocal<Long>() {
-        @Override
-        protected Long initialValue() {
-            return 0L;
-        }
-    };
+    private static final ThreadLocal<Long> throwCost = ThreadLocal.withInitial(() -> 0L);
 
     private static final long BASELINE_ALLOC_KILL_THRESHOLD = 1024 * 1024;
 
@@ -54,8 +34,7 @@ public class RuntimeCostAccounter {
         if (current == primaryThread)
             return;
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("In recordJump() at " + System.currentTimeMillis() + " on " + current.getName());
+        LOGGER.debug("In recordJump() at {} on {}", System.currentTimeMillis(), current.getName());
         checkJumpCost(1);
     }
 
@@ -64,9 +43,8 @@ public class RuntimeCostAccounter {
         if (current == primaryThread)
             return;
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("In recordAllocation() at " + System.currentTimeMillis()
-                    + ", got object type: " + typeName + " on " + current.getName());
+        LOGGER.debug("In recordAllocation() at {}, got object type: {} on {}",
+                System.currentTimeMillis(), typeName, current.getName());
 
         // More sophistication is clearly possible, e.g. caching approximate sizes for types that we encounter
         checkAllocationCost(1);
@@ -77,9 +55,8 @@ public class RuntimeCostAccounter {
         if (current == primaryThread)
             return;
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("In recordArrayAllocation() at " + System.currentTimeMillis()
-                    + ", got array element size: " + multiplier + " and size: " + length + " on " + current.getName());
+        LOGGER.debug("In recordArrayAllocation() at {}, got array element size: {} and size: {} on {}",
+                System.currentTimeMillis(), multiplier, length, current.getName());
 
         checkAllocationCost(length * multiplier);
     }
@@ -89,8 +66,7 @@ public class RuntimeCostAccounter {
         if (current == primaryThread)
             return;
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("In recordMethodCall() at " + System.currentTimeMillis() + " on " + current.getName());
+        LOGGER.debug("In recordMethodCall() at {} on {}", System.currentTimeMillis(), current.getName());
 
         checkInvokeCost(1);
     }
@@ -100,8 +76,7 @@ public class RuntimeCostAccounter {
         if (current == primaryThread)
             return;
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("In recordThrow() at " + System.currentTimeMillis() + " on " + current.getName());
+        LOGGER.debug("In recordThrow() at {} on {}", System.currentTimeMillis(), current.getName());
         checkThrowCost(1);
     }
 
@@ -114,8 +89,7 @@ public class RuntimeCostAccounter {
         allocationCost.set(newValue);
         if (newValue > BASELINE_ALLOC_KILL_THRESHOLD) {
             final Thread current = Thread.currentThread();
-            if (LOGGER.isDebugEnabled())
-                LOGGER.debug("Contract " + current + " terminated for overallocation");
+            LOGGER.debug("Contract {} terminated for overallocation", current);
             throw new ThreadDeath();
         }
     }
@@ -125,8 +99,7 @@ public class RuntimeCostAccounter {
         jumpCost.set(newValue);
         if (newValue > BASELINE_JUMP_KILL_THRESHOLD) {
             final Thread current = Thread.currentThread();
-            if (LOGGER.isDebugEnabled())
-                LOGGER.debug("Contract " + current + " terminated for excessive use of looping");
+            LOGGER.debug("Contract {} terminated for excessive use of looping", current);
             throw new ThreadDeath();
         }
     }
@@ -136,8 +109,7 @@ public class RuntimeCostAccounter {
         invokeCost.set(newValue);
         if (newValue > BASELINE_INVOKE_KILL_THRESHOLD) {
             final Thread current = Thread.currentThread();
-            if (LOGGER.isDebugEnabled())
-                LOGGER.debug("Contract " + current + " terminated for excessive method calling");
+            LOGGER.debug("Contract {} terminated for excessive method calling", current);
             throw new ThreadDeath();
         }
     }
@@ -147,8 +119,7 @@ public class RuntimeCostAccounter {
         throwCost.set(newValue);
         if (newValue > BASELINE_THROW_KILL_THRESHOLD) {
             final Thread current = Thread.currentThread();
-            if (LOGGER.isDebugEnabled())
-                LOGGER.debug("Contract " + current + " terminated for excessive exception throwing");
+            LOGGER.debug("Contract {} terminated for excessive exception throwing", current);
             throw new ThreadDeath();
         }
     }

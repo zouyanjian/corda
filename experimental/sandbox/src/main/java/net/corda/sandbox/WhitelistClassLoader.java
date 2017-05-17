@@ -102,9 +102,7 @@ public final class WhitelistClassLoader extends ClassLoader {
      *         of the passed classloader
      */
     public static WhitelistClassLoader of(final WhitelistClassLoader other) {
-        final WhitelistClassLoader out = new WhitelistClassLoader(other);
-//        out.candidacyStatus.setContextLoader(out);
-        return out;
+        return new WhitelistClassLoader(other);
     }
 
     /**
@@ -193,13 +191,11 @@ public final class WhitelistClassLoader extends ClassLoader {
             }
         }
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Saving class " + cls + " as " + qualifiedClassName);
+        LOGGER.debug("Saving class {} as {}", cls, qualifiedClassName);
 
         loadedClasses.put(qualifiedClassName, cls);
 
-        if (LOGGER.isDebugEnabled())
-            LOGGER.debug("Saving class " + cls + " as " + sandboxed);
+        LOGGER.debug("Saving class {} as {}", cls, sandboxed);
 
         loadedClasses.put(sandboxed, cls);
 
@@ -225,8 +221,7 @@ public final class WhitelistClassLoader extends ClassLoader {
                 final ClassVisitor whitelistCheckingClassVisitor
                         = new WhitelistCheckingClassVisitor(classInternalName, candidacyStatus);
 
-                if (LOGGER.isDebugEnabled())
-                    LOGGER.debug("About to read class: " + classInternalName);
+                LOGGER.debug("About to read class: {}", classInternalName);
 
                 // If there's debug info in the class, don't look at that whilst visiting
                 classReader.accept(whitelistCheckingClassVisitor, ClassReader.SKIP_DEBUG);
@@ -284,7 +279,7 @@ public final class WhitelistClassLoader extends ClassLoader {
      */
     public byte[] instrumentWithCosts(final byte[] originalClassContents, final Set<String> methodsToRemove) {
         final ClassReader reader = new ClassReader(originalClassContents);
-        final ClassWriter writer = new SandboxAwareClassWriter(this, reader, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        final ClassWriter writer = new SandboxAwareClassWriter(this, reader, ClassWriter.COMPUTE_MAXS);
         final ClassVisitor remapper = new ClassRemapper(writer, new SandboxRemapper());
         final ClassVisitor coster = new ClassVisitor(Opcodes.ASM5, remapper) {
             @Override

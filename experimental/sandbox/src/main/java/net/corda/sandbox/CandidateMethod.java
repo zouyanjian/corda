@@ -64,6 +64,10 @@ public final class CandidateMethod {
         currentState = State.DETERMINISTIC;
     }
 
+    public boolean isDeterministic() {
+        return currentState == State.DETERMINISTIC;
+    }
+
     public void scanned() {
         currentState = State.SCANNED;
     }
