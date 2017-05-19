@@ -1,6 +1,7 @@
 package net.corda.demobench.pty
 
 import com.jediterm.terminal.ProcessTtyConnector
+import com.jediterm.terminal.ui.UIUtil.isWindows
 import com.pty4j.PtyProcess
 import com.pty4j.WinSize
 import java.nio.charset.Charset
@@ -14,7 +15,7 @@ class PtyProcessTtyConnector(
         private val name: String,
         private val process: PtyProcess,
         charset: Charset
-) : ProcessTtyConnector(process.zeroFiltered(), charset) {
+) : ProcessTtyConnector(if (isWindows) process else process.zeroFiltered(), charset) {
 
     override fun getName() = name
 
