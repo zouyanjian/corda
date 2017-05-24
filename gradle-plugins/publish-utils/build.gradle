@@ -1,32 +1,37 @@
-apply plugin: 'groovy'
-apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
-
 // Used for bootstrapping project
 buildscript {
     Properties constants = new Properties()
     file("../../constants.properties").withInputStream { constants.load(it) }
 
+    ext.kotlin_version = constants.getProperty("kotlinVersion")
     ext.gradle_plugins_version = constants.getProperty("gradlePluginsVersion")
+    ext.bintray_version = '1.4'
 
     repositories {
         jcenter()
     }
 
     dependencies {
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.4'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
     }
 }
+
+apply plugin: 'kotlin'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
 
 version "$gradle_plugins_version"
 
 dependencies {
     compile gradleApi()
-    compile localGroovy()
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
 }
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 task("sourceJar", type: Jar, dependsOn: classes) {

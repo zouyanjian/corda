@@ -2,43 +2,43 @@ package net.corda.plugins.bintray
 
 import org.gradle.util.ConfigureUtil
 
-class BintrayConfigExtension {
+open class BintrayConfigExtension {
     /**
      * Bintray username
      */
-    String user
+    var user: String? = null
     /**
      * Bintray access key
      */
-    String key
+    var key: String? = null
     /**
      * Bintray repository
      */
-    String repo
+    var repo: String? = null
     /**
      * Bintray organisation
      */
-    String org
+    var org: String? = null
     /**
      * Licenses for packages uploaded by this configuration
      */
-    String[] licenses
+    var licenses: Array<String>? = null
     /**
      * Whether to sign packages uploaded by this configuration
      */
-    Boolean gpgSign
+    var gpgSign: Boolean? = null
     /**
      * The passphrase for the key used to sign releases.
      */
-    String gpgPassphrase
+    var gpgPassphrase: String? = null
     /**
      * VCS URL
      */
-    String vcsUrl
+    var vcsUrl: String? = null
     /**
      * Project URL
      */
-    String projectUrl
+    var projectUrl: String? = null
     /**
      * The publications that will be uploaded as a part of this configuration. These must match both the name on
      * bintray and the gradle module name. ie; it must be "some-package" as a gradle sub-module (root project not
@@ -46,25 +46,25 @@ class BintrayConfigExtension {
      * "some-package". Only one publication can be uploaded per module (a bintray plugin restriction(.
      * If any of these conditions are not met your package will not be uploaded.
      */
-    String[] publications
+    var publications: Array<String>? = null
     /**
      * Whether to test the publication without uploading to bintray.
      */
-    Boolean dryRun
+    var dryRun: Boolean? = null
     /**
      * The license this project will use (currently limited to one)
      */
-    License license = new License()
+    var license = License()
     /**
      * The developer of this project (currently limited to one)
      */
-    Developer developer = new Developer()
+    var developer = Developer()
 
-    void license(Closure closure) {
-        ConfigureUtil.configure(closure, license)
+    fun license(configure: License.() -> Unit) {
+        license.configure()
     }
 
-    void developer(Closure closure) {
-        ConfigureUtil.configure(closure, developer)
+    fun developer(configure: Developer.() -> Unit) {
+        developer.configure()
     }
 }

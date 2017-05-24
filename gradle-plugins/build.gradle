@@ -41,13 +41,13 @@ bintrayConfig {
     gpgPassphrase = System.getenv('CORDA_BINTRAY_GPG_PASSPHRASE')
     publications = ['cordformation', 'quasar-utils', 'cordform-common']
     license {
-        name = 'Apache-2.0'
-        url = 'https://www.apache.org/licenses/LICENSE-2.0'
-        distribution = 'repo'
+        it.name = 'Apache-2.0'
+        it.url = 'https://www.apache.org/licenses/LICENSE-2.0'
+        it.distribution = 'repo'
     }
     developer {
-        id = 'R3'
-        name = 'R3'
-        email = 'dev@corda.net'
+        it.id = 'R3'
+        it.name = 'R3'
+        it.email = 'dev@corda.net'
     }
 }

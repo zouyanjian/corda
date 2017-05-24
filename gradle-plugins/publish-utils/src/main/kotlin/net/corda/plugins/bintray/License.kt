@@ -4,13 +4,13 @@ class License {
     /**
      * The name of license (eg; Apache 2.0)
      */
-    String name
+    var name: String? = null
     /**
      * URL to the full license file
      */
-    String url
+    var url: String? = null
     /**
      * The distribution level this license corresponds to (eg: repo)
      */
-    String distribution
+    var distribution: String? = null
 }

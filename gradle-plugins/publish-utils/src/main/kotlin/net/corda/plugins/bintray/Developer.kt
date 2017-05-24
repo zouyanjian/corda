@@ -4,13 +4,13 @@ class Developer {
     /**
      * A unique identifier the developer (eg; organisation ID)
      */
-    String id
+    var id: String? = null
     /**
      * The full name of the developer
      */
-    String name
+    var name: String? = null
     /**
      * An email address for contacting the developer
      */
-    String email
+    var email: String? = null
 }

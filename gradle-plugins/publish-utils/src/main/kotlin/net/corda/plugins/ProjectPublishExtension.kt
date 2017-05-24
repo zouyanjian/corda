@@ -1,16 +1,16 @@
 package net.corda.plugins
 
-class ProjectPublishExtension {
+open class ProjectPublishExtension {
     /**
      * Use a different name from the current project name for publishing
      */
-    String name
+    var name: String? = null
     /**
      * True when we do not want to publish default Java components
      */
-    Boolean disableDefaultJar = false
+    var disableDefaultJar = false
     /**
      * True if publishing a WAR instead of a JAR. Forces disableDefaultJAR to "true" when true
      */
-    Boolean publishWar = false
+    var publishWar = false
 }
