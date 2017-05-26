@@ -7,13 +7,16 @@ import net.corda.core.flows.FlowLogicRefFactory
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.ServiceType
+import net.corda.core.seconds
 import net.corda.core.serialization.*
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.until
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.PublicKey
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.jar.JarInputStream
@@ -420,6 +423,13 @@ class TimeWindow private constructor(
         val untilTime: Instant?
 ) {
     companion object {
+        /**
+         * Default tolerance required for validity checking.
+         * TODO: consider moving it to a properties file.
+         */
+        @JvmField
+        val defaultTolerance = 30.seconds
+
         /** Use when the left-side [fromTime] of a [TimeWindow] is only required and we don't need an end instant (untilTime). */
         @JvmStatic
         fun fromOnly(fromTime: Instant) = TimeWindow(fromTime, null)
@@ -445,6 +455,23 @@ class TimeWindow private constructor(
 
     /** The midpoint is calculated as fromTime + (untilTime - fromTime)/2. Note that it can only be computed if both sides are set. */
     val midpoint: Instant get() = fromTime!! + Duration.between(fromTime, untilTime!!).dividedBy(2)
+
+    /**
+     * Checks if the given time-window currently falls within the allowed tolerance interval.
+     * @param clock a [Clock] providing access to the current instant, date and time using a time-zone.
+     * If not provided, default value is [Clock.systemUTC].
+     * @param tolerance we allow a tolerance from both sides of the [TimeWindow] in case of unsynchronised clocks.
+     * Set it to zero to strictly follow the [TimeWindow] range. If not provided, default value is [defaultTolerance].
+     * @return true if the [TimeWindow] is currently valid, otherwise false.
+     * */
+    fun isValid(clock: Clock = Clock.systemUTC(), tolerance: Duration = defaultTolerance): Boolean {
+        val now = clock.instant()
+        // We don't need to test for (fromTime == null && untilTime == null) or backwards bounds because the TimeWindow
+        // factory methods ensure that.
+        if (untilTime != null && untilTime until now > tolerance) return false
+        if (fromTime != null && now until fromTime > tolerance) return false
+        return true
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
