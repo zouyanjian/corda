@@ -55,7 +55,7 @@ class DistributedImmutableMap<K : Any, V : Any>(val db: Database, tableName: Str
      * @return map containing conflicting entries
      */
     fun put(commit: Commit<Commands.PutAll<K, V>>): Map<K, V> {
-        commit.use { commit ->
+        commit.use { _ ->
             val conflicts = LinkedHashMap<K, V>()
             db.transaction {
                 val entries = commit.operation().entries
