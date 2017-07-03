@@ -29,7 +29,7 @@ import kotlin.reflect.KClass
  * Handles CorDapp loading and classpath scanning
  */
 class CordappLoader private constructor (val cordappClassPath: List<Path>) {
-    val appClassLoader: ClassLoader = javaClass.classLoader
+    val appClassLoader: CordappClassLoader = CordappClassLoader(1, cordappClassPath.map { it.toUri().toURL() }.toTypedArray())
     val scanResult = scanCordapps()
 
     companion object {

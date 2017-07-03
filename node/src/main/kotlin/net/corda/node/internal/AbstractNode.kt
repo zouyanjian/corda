@@ -286,6 +286,21 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
                 }
     }
 
+    private class FlowTypeHierarchyComparator(val initiatingFlow: Class<out FlowLogic<*>>) : Comparator<Class<out FlowLogic<*>>> {
+        override fun compare(o1: Class<out FlowLogic<*>>, o2: Class<out FlowLogic<*>>): Int {
+            return if (o1 == o2) {
+                0
+            } else if (o1.isAssignableFrom(o2)) {
+                1
+            } else if (o2.isAssignableFrom(o1)) {
+                -1
+            } else {
+                throw IllegalArgumentException("${initiatingFlow.name} has been specified as the initiating flow by " +
+                        "both ${o1.name} and ${o2.name}")
+            }
+        }
+    }
+
     /**
      * Use this method to register your initiated flows in your tests. This is automatically done by the node when it
      * starts up for all [FlowLogic] classes it finds which are annotated with [InitiatedBy].
@@ -302,7 +317,12 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         require(classWithAnnotation == initiatingFlow) {
             "${InitiatedBy::class.java.name} must point to ${classWithAnnotation.name} and not ${initiatingFlow.name}"
         }
-        val flowFactory = InitiatedFlowFactory.CorDapp(version, initiatedFlow.appName, { ctor.newInstance(it) })
+        val flowFactory = InitiatedFlowFactory.CorDapp(version, initiatedFlow.appName, { 
+            val out = ctor.newInstance(it)
+            println("${out.javaClass.classLoader} == ${cordappLoader.appClassLoader}")
+            assert(out.javaClass.classLoader == cordappLoader.appClassLoader)
+            out
+        })
         val observable = internalRegisterFlowFactory(initiatingFlow, flowFactory, initiatedFlow, track)
         log.info("Registered ${initiatingFlow.name} to initiate ${initiatedFlow.name} (version $version)")
         return observable
