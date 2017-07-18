@@ -2,7 +2,7 @@
  * This build.gradle exists to publish our capsule (executable fat jar) to maven. It cannot be placed in the
  * node project because the bintray plugin cannot publish two modules from one project.
  */
-apply plugin: 'kotlin'
+apply plugin: 'java'
 apply plugin: 'net.corda.plugins.publish-utils'
 //apply plugin: 'us.kirchmeier.capsule'
 apply plugin: 'com.jfrog.artifactory'
@@ -71,7 +71,7 @@ jar {
     baseName "corda"
 
     from configurations.runtime
-    from project(':node').sourceSets.main.output
+    from project(':node').jar.outputs
     from project(':node').configurations.runtime
     from "$rootDir/config/dev/log4j2.xml"
     from 'NOTICE' // Copy CDDL notice
@@ -84,6 +84,5 @@ jar {
 }
 
 publish {
-    //disableDefaultJar = true
     name  'corda'
 }

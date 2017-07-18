@@ -97,7 +97,6 @@ targetCompatibility = 1.8
 
 
 allprojects {
-    apply plugin: 'kotlin'
     apply plugin: 'java'
     apply plugin: 'jacoco'
 
