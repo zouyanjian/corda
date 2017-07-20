@@ -60,6 +60,7 @@ public class CordaJarLoader extends ClassLoader {
         System.out.println("Resource: " + name);
         JarStreamAndEntry streamAndEntry = getResourceSteamAndEntry(name);
         System.out.println("StreamAndEntry: " + streamAndEntry);
+        System.out.println("Stream: " + streamAndEntry.stream);
         return (streamAndEntry != null) ? streamAndEntry.stream : null;
     }
 
@@ -75,6 +76,11 @@ public class CordaJarLoader extends ClassLoader {
 
     private JarStreamAndEntry getResourceSteamAndEntry(String name) throws IOException {
         System.out.println("Looking for STREAM AND ENTRY " + name);
+
+        // TODO: 1. Remove the second Jansi if possible or exclude it and then debug where and why the resource isn't
+        // loaded correctly inside the JANSI lib (it blackholes the exceptions)
+        (new Exception()).printStackTrace();
+
         String jarEntry = resources.get(name);
         InputStream is = jarFile.getInputStream(jarFile.getJarEntry(jarEntry));
         JarInputStream jis = new JarInputStream(is);
@@ -158,7 +164,8 @@ public class CordaJarLoader extends ClassLoader {
 
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
-        File maybeJar = new File(CordaJarLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        //File maybeJar = new File(CordaJarLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        File maybeJar = new File("C:/work/corda/node/capsule/build/libs/corda-0.14-SNAPSHOT.jar");
         if (maybeJar.isFile() && hasJarExtention(maybeJar.getName())) {
             ClassLoader loader = new CordaJarLoader(new JarFile(maybeJar));
             Class<?> startupClass = loader.loadClass("net.corda.node.Corda");
