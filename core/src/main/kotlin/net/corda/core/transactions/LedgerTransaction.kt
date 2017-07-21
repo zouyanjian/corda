@@ -36,8 +36,9 @@ class LedgerTransaction(
         notary: Party?,
         signers: List<PublicKey>,
         timeWindow: TimeWindow?,
-        type: TransactionType
-) : BaseTransaction(inputs, outputs, notary, signers, type, timeWindow) {
+        type: TransactionType,
+        encumbrances: List<Int>?
+) : BaseTransaction(inputs, outputs, notary, signers, type, timeWindow, encumbrances) {
     //DOCEND 1
     init {
         checkInvariants()

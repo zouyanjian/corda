@@ -32,8 +32,9 @@ class WireTransaction(
         notary: Party?,
         signers: List<PublicKey>,
         type: TransactionType,
-        timeWindow: TimeWindow?
-) : BaseTransaction(inputs, outputs, notary, signers, type, timeWindow), TraversableTransaction {
+        timeWindow: TimeWindow?,
+        encumbrances: List<Int>?
+) : BaseTransaction(inputs, outputs, notary, signers, type, timeWindow, encumbrances), TraversableTransaction {
     init {
         checkInvariants()
     }
@@ -91,7 +92,7 @@ class WireTransaction(
         val resolvedInputs = inputs.map { ref ->
             resolveStateRef(ref)?.let { StateAndRef(it, ref) } ?: throw TransactionResolutionException(ref.txhash)
         }
-        return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, mustSign, timeWindow, type)
+        return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, mustSign, timeWindow, type, encumbrances)
     }
 
     /**
@@ -113,15 +114,24 @@ class WireTransaction(
      */
     fun filterWithFun(filtering: Predicate<Any>): FilteredLeaves {
         fun notNullFalse(elem: Any?): Any? = if (elem == null || !filtering.test(elem)) null else elem
+
+        val filteredOutputs = outputs.filter { filtering.test(it) }
+        val filteredEncumbrances = filteredOutputs.map {
+            val encumberingState = getEncumberingState(it)
+            val encumbranceIndex = filteredOutputs.indexOf(encumberingState)
+            encumbranceIndex
+        }
+
         return FilteredLeaves(
                 inputs.filter { filtering.test(it) },
                 attachments.filter { filtering.test(it) },
-                outputs.filter { filtering.test(it) },
+                filteredOutputs,
                 commands.filter { filtering.test(it) },
                 notNullFalse(notary) as Party?,
                 mustSign.filter { filtering.test(it) },
                 notNullFalse(type) as TransactionType?,
-                notNullFalse(timeWindow) as TimeWindow?
+                notNullFalse(timeWindow) as TimeWindow?,
+                filteredEncumbrances
         )
     }
 

@@ -34,6 +34,7 @@ interface TraversableTransaction {
     val mustSign: List<PublicKey>
     val type: TransactionType?
     val timeWindow: TimeWindow?
+    val encumbrances: List<Int>?
 
     /**
      * Returns a flattened list of all the components that are present in the transaction, in the following order:
@@ -57,6 +58,7 @@ interface TraversableTransaction {
             result.addAll(mustSign)
             type?.let { result += it }
             timeWindow?.let { result += it }
+            encumbrances?.let { result.addAll(it) }
             return result
         }
 
@@ -81,7 +83,8 @@ class FilteredLeaves(
         override val notary: Party?,
         override val mustSign: List<PublicKey>,
         override val type: TransactionType?,
-        override val timeWindow: TimeWindow?
+        override val timeWindow: TimeWindow?,
+        override val encumbrances: List<Int>?
 ) : TraversableTransaction {
     /**
      * Function that checks the whole filtered structure.

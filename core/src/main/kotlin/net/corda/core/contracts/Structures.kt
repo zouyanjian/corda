@@ -95,29 +95,11 @@ interface ContractState {
  * This is the definitive state that is stored on the ledger and used in transaction outputs.
  */
 @CordaSerializable
-data class TransactionState<out T : ContractState> @JvmOverloads constructor(
+data class TransactionState<out T : ContractState> constructor(
         /** The custom contract state */
         val data: T,
         /** Identity of the notary that ensures the state is not used as an input to a transaction more than once */
-        val notary: Party,
-        /**
-         * All contract states may be _encumbered_ by up to one other state.
-         *
-         * The encumbrance state, if present, forces additional controls over the encumbered state, since the platform checks
-         * that the encumbrance state is present as an input in the same transaction that consumes the encumbered state, and
-         * the contract code and rules of the encumbrance state will also be verified during the execution of the transaction.
-         * For example, a cash contract state could be encumbered with a time-lock contract state; the cash state is then only
-         * processable in a transaction that verifies that the time specified in the encumbrance time-lock has passed.
-         *
-         * The encumbered state refers to another by index, and the referred encumbrance state
-         * is an output state in a particular position on the same transaction that created the encumbered state. An alternative
-         * implementation would be encumbering by reference to a [StateRef], which would allow the specification of encumbrance
-         * by a state created in a prior transaction.
-         *
-         * Note that an encumbered state that is being consumed must have its encumbrance consumed in the same transaction,
-         * otherwise the transaction is not valid.
-         */
-        val encumbrance: Int? = null)
+        val notary: Party)
 // DOCEND 4
 
 /** Wraps the [ContractState] in a [TransactionState] object */
