@@ -75,13 +75,10 @@ public class CordaJarLoader extends ClassLoader {
     }
 
     private JarStreamAndEntry getResourceSteamAndEntry(String name) throws IOException {
-        System.out.println("Looking for STREAM AND ENTRY " + name);
-
-        // TODO: 1. Remove the second Jansi if possible or exclude it and then debug where and why the resource isn't
-        // loaded correctly inside the JANSI lib (it blackholes the exceptions)
-        (new Exception()).printStackTrace();
+        //System.out.println("Looking for STREAM AND ENTRY " + name);
 
         String jarEntry = resources.get(name);
+        //System.out.println("Found it in: " + jarEntry);
         InputStream is = jarFile.getInputStream(jarFile.getJarEntry(jarEntry));
         JarInputStream jis = new JarInputStream(is);
         JarEntry entry;
@@ -153,7 +150,12 @@ public class CordaJarLoader extends ClassLoader {
         JarInputStream jis = new JarInputStream(is);
         JarEntry entry;
         while ((entry = jis.getNextJarEntry()) != null) {
-            resources.put(entry.getName(), bucketName);
+            if(!entry.isDirectory()) {
+                if(resources.containsKey(entry.getName())) {
+                    System.out.println("Duplicate entry found: " + entry.getName());
+                }
+                resources.put(entry.getName(), bucketName);
+            }
         }
     }
 
@@ -165,7 +167,7 @@ public class CordaJarLoader extends ClassLoader {
     public static void main(String[] args) throws Exception {
         long startTime = System.currentTimeMillis();
         //File maybeJar = new File(CordaJarLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        File maybeJar = new File("C:/work/corda/node/capsule/build/libs/corda-0.14-SNAPSHOT.jar");
+        File maybeJar = new File("D:/work/corda/node/capsule/build/libs/corda-0.14-SNAPSHOT.jar");
         if (maybeJar.isFile() && hasJarExtention(maybeJar.getName())) {
             ClassLoader loader = new CordaJarLoader(new JarFile(maybeJar));
             Class<?> startupClass = loader.loadClass("net.corda.node.Corda");
@@ -175,6 +177,9 @@ public class CordaJarLoader extends ClassLoader {
             System.out.println("Time taken: " + timeTaken + "ms");
 
             m.invoke(null, new Object[] { args });
+        } else {
+            System.err.println("Could not find " + maybeJar);
+            System.exit(-1);
         }
     }
 }
