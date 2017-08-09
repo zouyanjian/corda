@@ -11,6 +11,7 @@ import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.testing.PublicKeyGenerator
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.testing.ALICE_PUBKEY
 import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.MINI_CORP
@@ -63,7 +64,7 @@ class JacksonSupportTest : TestDependencyInjectionBase() {
     @Test
     fun writeTransaction() {
         fun makeDummyTx(): SignedTransaction {
-            val wtx = DummyContract.generateInitial(1, DUMMY_NOTARY, MINI_CORP.ref(1)).toWireTransaction()
+            val wtx = DummyContract.generateInitial(1, DUMMY_NOTARY, NonEmptyList.of(MINI_CORP.ref(1))).toWireTransaction()
             val signatures = TransactionSignature(
                     ByteArray(1),
                     ALICE_PUBKEY,
@@ -72,7 +73,7 @@ class JacksonSupportTest : TestDependencyInjectionBase() {
                             Crypto.findSignatureScheme(ALICE_PUBKEY).schemeNumberID
                     )
             )
-            return SignedTransaction(wtx, listOf(signatures))
+            return SignedTransaction(wtx, NonEmptyList.of(signatures))
         }
 
         val writer = mapper.writer()

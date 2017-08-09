@@ -2,17 +2,18 @@ package net.corda.node.services
 
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.StateRef
-import net.corda.testing.contracts.DummyContract
-import net.corda.core.identity.Party
-import net.corda.testing.DUMMY_BANK_A
 import net.corda.core.flows.NotaryError
 import net.corda.core.flows.NotaryException
 import net.corda.core.flows.NotaryFlow
+import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.map
 import net.corda.core.internal.concurrent.transpose
-import net.corda.core.utilities.getOrThrow
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.NonEmptyList
+import net.corda.core.utilities.getOrThrow
 import net.corda.node.internal.AbstractNode
+import net.corda.testing.DUMMY_BANK_A
+import net.corda.testing.contracts.DummyContract
 import net.corda.testing.node.NodeBasedTest
 import org.bouncycastle.asn1.x500.X500Name
 import org.junit.Test
@@ -55,7 +56,7 @@ class RaftNotaryServiceTests : NodeBasedTest() {
 
     private fun issueState(node: AbstractNode, notary: Party): StateAndRef<*> {
         return node.database.transaction {
-            val builder = DummyContract.generateInitial(Random().nextInt(), notary, node.info.legalIdentity.ref(0))
+            val builder = DummyContract.generateInitial(Random().nextInt(), notary, NonEmptyList.of(node.info.legalIdentity.ref(0)))
             val stx = node.services.signInitialTransaction(builder)
             node.services.recordTransactions(stx)
             StateAndRef(builder.outputStates().first(), StateRef(stx.id, 0))

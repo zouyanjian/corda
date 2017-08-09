@@ -11,6 +11,7 @@ import net.corda.core.flows.FlowException
 import net.corda.core.internal.concurrent.thenMatch
 import net.corda.core.messaging.startFlow
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.loadtest.LoadTest
 import net.corda.loadtest.NodeConnection
 import net.corda.testing.contracts.DummyContract
@@ -27,7 +28,7 @@ val dummyNotarisationTest = LoadTest<NotariseCommand, Unit>(
             val issuerServices = MockServices(DUMMY_CASH_ISSUER_KEY)
             val generateTx = Generator.pickOne(simpleNodes).flatMap { node ->
                 Generator.int().map {
-                    val issueBuilder = DummyContract.generateInitial(it, notary.info.notaryIdentity, DUMMY_CASH_ISSUER)
+                    val issueBuilder = DummyContract.generateInitial(it, notary.info.notaryIdentity, NonEmptyList.of(DUMMY_CASH_ISSUER))
                     val issueTx = issuerServices.signInitialTransaction(issueBuilder)
                     val asset = issueTx.tx.outRef<DummyContract.SingleOwnerState>(0)
                     val moveBuilder = DummyContract.move(asset, DUMMY_CASH_ISSUER.party)

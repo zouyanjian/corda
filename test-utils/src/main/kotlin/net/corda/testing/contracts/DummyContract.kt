@@ -6,6 +6,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.NonEmptyList
 
 // The dummy contract doesn't do anything useful. It exists for testing purposes.
 
@@ -30,9 +31,8 @@ data class DummyContract(override val legalContractReference: SecureHash = Secur
      * in a different field, however this is a good example of a contract with multiple states.
      */
     data class MultiOwnerState(override val magicNumber: Int = 0,
-                               val owners: List<AbstractParty>) : ContractState, State {
+                               override val participants: List<AbstractParty>) : DummyContract.State {
         override val contract = DUMMY_PROGRAM_ID
-        override val participants: List<AbstractParty> get() = owners
     }
 
     interface Commands : CommandData {
@@ -46,20 +46,18 @@ data class DummyContract(override val legalContractReference: SecureHash = Secur
 
     companion object {
         @JvmStatic
-        fun generateInitial(magicNumber: Int, notary: Party, owner: PartyAndReference, vararg otherOwners: PartyAndReference): TransactionBuilder {
-            val owners = listOf(owner) + otherOwners
+        fun generateInitial(magicNumber: Int, notary: Party, owners: NonEmptyList<PartyAndReference>): TransactionBuilder {
             return if (owners.size == 1) {
-                val state = SingleOwnerState(magicNumber, owners.first().party)
-                TransactionBuilder(notary).withItems(state, Command(Commands.Create(), owners.first().party.owningKey))
+                val state = SingleOwnerState(magicNumber, owners[0].party)
+                TransactionBuilder(notary).withItems(state, Command(Commands.Create(), owners[0].party.owningKey))
             } else {
                 val state = MultiOwnerState(magicNumber, owners.map { it.party })
                 TransactionBuilder(notary).withItems(state, Command(Commands.Create(), owners.map { it.party.owningKey }))
             }
         }
 
-        fun move(prior: StateAndRef<SingleOwnerState>, newOwner: AbstractParty) = move(listOf(prior), newOwner)
-        fun move(priors: List<StateAndRef<SingleOwnerState>>, newOwner: AbstractParty): TransactionBuilder {
-            require(priors.isNotEmpty())
+        fun move(prior: StateAndRef<SingleOwnerState>, newOwner: AbstractParty) = move(NonEmptyList.of(prior), newOwner)
+        fun move(priors: NonEmptyList<StateAndRef<SingleOwnerState>>, newOwner: AbstractParty): TransactionBuilder {
             val priorState = priors[0].state.data
             val (cmd, state) = priorState.withNewOwner(newOwner)
             return TransactionBuilder(notary = priors[0].state.notary).withItems(

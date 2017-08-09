@@ -8,6 +8,7 @@ import net.corda.core.identity.Party
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.AbstractNode
@@ -158,7 +159,7 @@ class NotaryChangeTests {
 }
 
 fun issueState(node: AbstractNode, notaryNode: AbstractNode): StateAndRef<*> {
-    val tx = DummyContract.generateInitial(Random().nextInt(), notaryNode.info.notaryIdentity, node.info.legalIdentity.ref(0))
+    val tx = DummyContract.generateInitial(Random().nextInt(), notaryNode.info.notaryIdentity, NonEmptyList.of(node.info.legalIdentity.ref(0)))
     val signedByNode = node.services.signInitialTransaction(tx)
     val stx = notaryNode.services.addSignature(signedByNode, notaryNode.services.notaryIdentityKey)
     node.services.recordTransactions(stx)
@@ -179,7 +180,7 @@ fun issueMultiPartyState(nodeA: AbstractNode, nodeB: AbstractNode, notaryNode: A
 }
 
 fun issueInvalidState(node: AbstractNode, notary: Party): StateAndRef<*> {
-    val tx = DummyContract.generateInitial(Random().nextInt(), notary, node.info.legalIdentity.ref(0))
+    val tx = DummyContract.generateInitial(Random().nextInt(), notary, NonEmptyList.of(node.info.legalIdentity.ref(0)))
     tx.setTimeWindow(Instant.now(), 30.seconds)
     val stx = node.services.signInitialTransaction(tx)
     node.services.recordTransactions(stx)

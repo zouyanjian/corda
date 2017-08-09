@@ -22,6 +22,7 @@ import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.ServiceType
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.FilteredTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import net.corda.irs.flows.RatesFixFlow
@@ -127,8 +128,7 @@ object NodeInterestRates {
         }
 
         @Suspendable
-        fun query(queries: List<FixOf>): List<Fix> {
-            require(queries.isNotEmpty())
+        fun query(queries: NonEmptyList<FixOf>): List<Fix> {
             return mutex.locked {
                 val answers: List<Fix?> = queries.map { container[it] }
                 val firstNull = answers.indexOf(null)

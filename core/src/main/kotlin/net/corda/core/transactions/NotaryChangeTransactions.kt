@@ -6,6 +6,7 @@ import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.toBase58String
 import net.corda.core.identity.Party
 import net.corda.core.node.ServiceHub
+import net.corda.core.utilities.NonEmptyList
 import java.security.PublicKey
 
 /**
@@ -14,7 +15,7 @@ import java.security.PublicKey
  * on the fly.
  */
 data class NotaryChangeWireTransaction(
-        override val inputs: List<StateRef>,
+        override val inputs: NonEmptyList<StateRef>,
         override val notary: Party,
         val newNotary: Party
 ) : CoreTransaction() {
@@ -26,7 +27,6 @@ data class NotaryChangeWireTransaction(
         get() = emptyList()
 
     init {
-        check(inputs.isNotEmpty()) { "A notary change transaction must have inputs" }
         check(notary != newNotary) { "The old and new notaries must be different – $newNotary" }
     }
 
@@ -36,7 +36,7 @@ data class NotaryChangeWireTransaction(
      */
     override val id: SecureHash by lazy { serializedHash(inputs + notary + newNotary) }
 
-    fun resolve(services: ServiceHub, sigs: List<TransactionSignature>): NotaryChangeLedgerTransaction {
+    fun resolve(services: ServiceHub, sigs: NonEmptyList<TransactionSignature>): NotaryChangeLedgerTransaction {
         val resolvedInputs = inputs.map { ref ->
             services.loadState(ref).let { StateAndRef(it, ref) }
         }
@@ -54,7 +54,7 @@ data class NotaryChangeLedgerTransaction(
         override val notary: Party,
         val newNotary: Party,
         override val id: SecureHash,
-        override val sigs: List<TransactionSignature>
+        override val sigs: NonEmptyList<TransactionSignature>
 ) : FullTransaction(), TransactionWithSignatures {
     init {
         checkEncumbrances()

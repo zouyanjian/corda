@@ -6,13 +6,14 @@ import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
+import net.corda.core.internal.Emoji
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
 import net.corda.core.node.services.queryBy
-import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
-import net.corda.core.internal.Emoji
+import net.corda.core.utilities.NonEmptyList
+import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.flows.CashIssueFlow
 import net.corda.node.internal.CordaRPCOpsImpl
@@ -57,7 +58,7 @@ class ContractUpgradeFlowTest {
     @Test
     fun `2 parties contract upgrade`() {
         // Create dummy contract.
-        val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1))
+        val twoPartyDummyContract = DummyContract.generateInitial(0, notary, NonEmptyList.of(a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1)))
         val signedByA = a.services.signInitialTransaction(twoPartyDummyContract)
         val stx = b.services.addSignature(signedByA)
 
@@ -118,7 +119,7 @@ class ContractUpgradeFlowTest {
     fun `2 parties contract upgrade using RPC`() {
         rpcDriver(initialiseSerialization = false) {
             // Create dummy contract.
-            val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1))
+            val twoPartyDummyContract = DummyContract.generateInitial(0, notary, NonEmptyList.of(a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1)))
             val signedByA = a.services.signInitialTransaction(twoPartyDummyContract)
             val stx = b.services.addSignature(signedByA)
 

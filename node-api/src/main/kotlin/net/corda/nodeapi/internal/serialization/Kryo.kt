@@ -19,6 +19,7 @@ import net.corda.core.transactions.CoreTransaction
 import net.corda.core.transactions.NotaryChangeWireTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.WireTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.i2p.crypto.eddsa.EdDSAPrivateKey
 import net.i2p.crypto.eddsa.EdDSAPublicKey
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec
@@ -291,7 +292,7 @@ object NotaryChangeWireTransactionSerializer : Serializer<NotaryChangeWireTransa
 
     @Suppress("UNCHECKED_CAST")
     override fun read(kryo: Kryo, input: Input, type: Class<NotaryChangeWireTransaction>): NotaryChangeWireTransaction {
-        val inputs = kryo.readClassAndObject(input) as List<StateRef>
+        val inputs = kryo.readClassAndObject(input) as NonEmptyList<StateRef>
         val notary = kryo.readClassAndObject(input) as Party
         val newNotary = kryo.readClassAndObject(input) as Party
 
@@ -310,7 +311,7 @@ object SignedTransactionSerializer : Serializer<SignedTransaction>() {
     override fun read(kryo: Kryo, input: Input, type: Class<SignedTransaction>): SignedTransaction {
         return SignedTransaction(
                 kryo.readClassAndObject(input) as SerializedBytes<CoreTransaction>,
-                kryo.readClassAndObject(input) as List<TransactionSignature>
+                kryo.readClassAndObject(input) as NonEmptyList<TransactionSignature>
         )
     }
 }

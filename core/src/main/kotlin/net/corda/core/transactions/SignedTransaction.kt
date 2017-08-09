@@ -9,6 +9,8 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
+import net.corda.core.utilities.NonEmptyList
+import net.corda.core.utilities.NonEmptySet
 import net.corda.core.utilities.getOrThrow
 import java.security.KeyPair
 import java.security.PublicKey
@@ -30,15 +32,11 @@ import java.util.*
  */
 // DOCSTART 1
 data class SignedTransaction(val txBits: SerializedBytes<CoreTransaction>,
-                             override val sigs: List<TransactionSignature>
+                             override val sigs: NonEmptyList<TransactionSignature>
 ) : TransactionWithSignatures {
     // DOCEND 1
-    constructor(ctx: CoreTransaction, sigs: List<TransactionSignature>) : this(ctx.serialize(), sigs) {
+    constructor(ctx: CoreTransaction, sigs: NonEmptyList<TransactionSignature>) : this(ctx.serialize(), sigs) {
         cachedTransaction = ctx
-    }
-
-    init {
-        require(sigs.isNotEmpty()) { "Tried to instantiate a ${SignedTransaction::class.java.simpleName} without any signatures " }
     }
 
     /** Cache the deserialized form of the transaction. This is useful when building a transaction or collecting signatures. */
@@ -85,13 +83,13 @@ data class SignedTransaction(val txBits: SerializedBytes<CoreTransaction>,
     fun withAdditionalSignature(sig: TransactionSignature) = copyWithCache(listOf(sig))
 
     /** Returns the same transaction but with an additional (unchecked) signatures. */
-    fun withAdditionalSignatures(sigList: Iterable<TransactionSignature>) = copyWithCache(sigList)
+    fun withAdditionalSignatures(sigList: Collection<TransactionSignature>) = copyWithCache(sigList)
 
     /**
      * Creates a copy of the SignedTransaction that includes the provided [sigList]. Also propagates the [cachedTransaction]
      * so the contained transaction does not need to be deserialized again.
      */
-    private fun copyWithCache(sigList: Iterable<TransactionSignature>): SignedTransaction {
+    private fun copyWithCache(sigList: Collection<TransactionSignature>): SignedTransaction {
         val cached = cachedTransaction
         return copy(sigs = sigs + sigList).apply {
             cachedTransaction = cached
@@ -175,6 +173,6 @@ data class SignedTransaction(val txBits: SerializedBytes<CoreTransaction>,
     override fun toString(): String = "${javaClass.simpleName}(id=$id)"
 
     @CordaSerializable
-    class SignaturesMissingException(val missing: Set<PublicKey>, val descriptions: List<String>, override val id: SecureHash)
+    class SignaturesMissingException(val missing: NonEmptySet<PublicKey>, val descriptions: List<String>, override val id: SecureHash)
         : NamedByHash, SignatureException("Missing signatures for $descriptions on transaction ${id.prefixChars()} for ${missing.joinToString()}")
 }

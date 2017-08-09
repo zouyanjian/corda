@@ -4,6 +4,7 @@ import net.corda.core.contracts.NamedByHash
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.isFulfilledBy
 import net.corda.core.transactions.SignedTransaction.SignaturesMissingException
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.toNonEmptySet
 import java.security.InvalidKeyException
 import java.security.PublicKey
@@ -11,7 +12,7 @@ import java.security.SignatureException
 
 /** An interface for transactions containing signatures, with logic for signature verification */
 interface TransactionWithSignatures : NamedByHash {
-    val sigs: List<TransactionSignature>
+    val sigs: NonEmptyList<TransactionSignature>
 
     /** Specifies all the public keys that require signatures for the transaction to be valid */
     val requiredSigningKeys: Set<PublicKey>

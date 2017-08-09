@@ -11,6 +11,7 @@ import net.corda.core.identity.Party
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.FilteredTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import net.corda.irs.flows.RatesFixFlow.FixOutOfRange
@@ -47,7 +48,7 @@ open class RatesFixFlow(protected val tx: TransactionBuilder,
     class FixOutOfRange(@Suppress("unused") val byAmount: BigDecimal) : Exception("Fix out of range by $byAmount")
 
     @CordaSerializable
-    data class QueryRequest(val queries: List<FixOf>)
+    data class QueryRequest(val queries: NonEmptyList<FixOf>)
 
     @CordaSerializable
     data class SignRequest(val ftx: FilteredTransaction)
@@ -98,7 +99,7 @@ open class RatesFixFlow(protected val tx: TransactionBuilder,
         @Suspendable
         override fun call(): Fix {
             // TODO: add deadline to receive
-            val resp = sendAndReceive<ArrayList<Fix>>(oracle, QueryRequest(listOf(fixOf)))
+            val resp = sendAndReceive<ArrayList<Fix>>(oracle, QueryRequest(NonEmptyList.of(fixOf)))
 
             return resp.unwrap {
                 val fix = it.first()

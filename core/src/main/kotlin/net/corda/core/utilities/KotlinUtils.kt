@@ -94,6 +94,9 @@ class TransientProperty<out T>(private val initialiser: () -> T) {
     }
 }
 
+/** @see NonEmptyList.copyOf */
+fun <T> Collection<T>.toNonEmptyList(): NonEmptyList<T> = NonEmptyList.copyOf(this)
+
 /** @see NonEmptySet.copyOf */
 fun <T> Collection<T>.toNonEmptySet(): NonEmptySet<T> = NonEmptySet.copyOf(this)
 

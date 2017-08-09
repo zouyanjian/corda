@@ -8,6 +8,7 @@ import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.TestDataVendingFlow
 import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.sequence
 import net.corda.testing.DUMMY_NOTARY_KEY
@@ -122,7 +123,7 @@ class ResolveTransactionsFlowTest {
             notaryServices.addSignature(ptx)
         }
 
-        val stx3 = DummyContract.move(listOf(stx1.tx.outRef(0), stx2.tx.outRef(0)), MINI_CORP).run {
+        val stx3 = DummyContract.move(NonEmptyList.of(stx1.tx.outRef(0), stx2.tx.outRef(0)), MINI_CORP).run {
             val ptx = megaCorpServices.signInitialTransaction(this)
             notaryServices.addSignature(ptx)
         }
@@ -167,7 +168,7 @@ class ResolveTransactionsFlowTest {
     // DOCSTART 2
     private fun makeTransactions(signFirstTX: Boolean = true, withAttachment: SecureHash? = null): Pair<SignedTransaction, SignedTransaction> {
         // Make a chain of custody of dummy states and insert into node A.
-        val dummy1: SignedTransaction = DummyContract.generateInitial(0, notary, MEGA_CORP.ref(1)).let {
+        val dummy1: SignedTransaction = DummyContract.generateInitial(0, notary, NonEmptyList.of(MEGA_CORP.ref(1))).let {
             if (withAttachment != null)
                 it.addAttachment(withAttachment)
             when (signFirstTX) {

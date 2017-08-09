@@ -8,6 +8,7 @@ import net.corda.core.identity.Party
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.unwrap
 import net.corda.testing.MINI_CORP_KEY
 import net.corda.testing.node.MockNetwork
@@ -150,7 +151,7 @@ class CollectSignaturesFlowTests {
 
     @Test
     fun `no need to collect any signatures`() {
-        val onePartyDummyContract = DummyContract.generateInitial(1337, notary, a.info.legalIdentity.ref(1))
+        val onePartyDummyContract = DummyContract.generateInitial(1337, notary, NonEmptyList.of(a.info.legalIdentity.ref(1)))
         val ptx = a.services.signInitialTransaction(onePartyDummyContract)
         val flow = a.services.startFlow(CollectSignaturesFlow(ptx))
         mockNet.runNetwork()
@@ -162,7 +163,7 @@ class CollectSignaturesFlowTests {
 
     @Test
     fun `fails when not signed by initiator`() {
-        val onePartyDummyContract = DummyContract.generateInitial(1337, notary, a.info.legalIdentity.ref(1))
+        val onePartyDummyContract = DummyContract.generateInitial(1337, notary, NonEmptyList.of(a.info.legalIdentity.ref(1)))
         val miniCorpServices = MockServices(MINI_CORP_KEY)
         val ptx = miniCorpServices.signInitialTransaction(onePartyDummyContract)
         val flow = a.services.startFlow(CollectSignaturesFlow(ptx))
@@ -175,9 +176,10 @@ class CollectSignaturesFlowTests {
     @Test
     fun `passes with multiple initial signatures`() {
         val twoPartyDummyContract = DummyContract.generateInitial(1337, notary,
-                a.info.legalIdentity.ref(1),
-                b.info.legalIdentity.ref(2),
-                b.info.legalIdentity.ref(3))
+                NonEmptyList.of(
+                        a.info.legalIdentity.ref(1),
+                        b.info.legalIdentity.ref(2),
+                        b.info.legalIdentity.ref(3)))
         val signedByA = a.services.signInitialTransaction(twoPartyDummyContract)
         val signedByBoth = b.services.addSignature(signedByA)
         val flow = a.services.startFlow(CollectSignaturesFlow(signedByBoth))

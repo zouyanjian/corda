@@ -10,6 +10,7 @@ import net.corda.core.flows.NotaryFlow
 import net.corda.core.node.services.ServiceInfo
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.AbstractNode
@@ -140,7 +141,7 @@ class NotaryServiceTests {
     }
 
     fun issueState(node: AbstractNode): StateAndRef<*> {
-        val tx = DummyContract.generateInitial(Random().nextInt(), notaryNode.info.notaryIdentity, node.info.legalIdentity.ref(0))
+        val tx = DummyContract.generateInitial(Random().nextInt(), notaryNode.info.notaryIdentity, NonEmptyList.of(node.info.legalIdentity.ref(0)))
         val signedByNode = node.services.signInitialTransaction(tx)
         val stx = notaryNode.services.addSignature(signedByNode, notaryNode.services.notaryIdentityKey)
         node.services.recordTransactions(stx)

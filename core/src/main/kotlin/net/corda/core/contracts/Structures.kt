@@ -13,6 +13,7 @@ import net.corda.core.serialization.MissingAttachmentsException
 import net.corda.core.serialization.SerializeAsTokenContext
 import net.corda.core.serialization.serialize
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.utilities.NonEmptyList
 import net.corda.core.utilities.OpaqueBytes
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -272,13 +273,8 @@ abstract class TypeOnlyCommandData : CommandData {
 
 /** Command data/content plus pubkey pair: the signature is stored at the end of the serialized bytes */
 @CordaSerializable
-data class Command<T : CommandData>(val value: T, val signers: List<PublicKey>) {
-    // TODO Introduce NonEmptyList?
-    init {
-        require(signers.isNotEmpty())
-    }
-
-    constructor(data: T, key: PublicKey) : this(data, listOf(key))
+data class Command<T : CommandData>(val value: T, val signers: NonEmptyList<PublicKey>) {
+    constructor(data: T, key: PublicKey) : this(data, NonEmptyList.of(key))
 
     private fun commandDataToString() = value.toString().let { if (it.contains("@")) it.replace('$', '.').split("@")[0] else it }
     override fun toString() = "${commandDataToString()} with pubkeys ${signers.joinToString()}"
@@ -307,7 +303,7 @@ data class UpgradeCommand(val upgradedContractClass: Class<out UpgradedContract<
 /** Wraps an object that was signed by a public key, which may be a well known/recognised institutional key. */
 @CordaSerializable
 data class AuthenticatedObject<out T : Any>(
-        val signers: List<PublicKey>,
+        val signers: NonEmptyList<PublicKey>,
         /** If any public keys were recognised, the looked up institutions are available here */
         val signingParties: List<Party>,
         val value: T
