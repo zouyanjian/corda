@@ -75,13 +75,16 @@ class InterestRateSwapAPI {
         }
     }
 
-    @GetMapping("deals/{ref}")
-    fun fetchDeal(@PathVariable("ref") ref: String): ResponseEntity<Any?> {
-        val deal = getDealByRef(ref)
+    @GetMapping("/deals/{ref:.+}")
+    fun fetchDeal(@PathVariable ref: String?): ResponseEntity<Any?> {
+        val deal = getDealByRef(ref!!)
         return if (deal == null) {
             ResponseEntity.notFound().build()
         } else {
             ResponseEntity.ok(deal)
         }
     }
+
+    @GetMapping("/deals/networksnapshot")
+    fun fetchDeal() = rpc.networkMapSnapshot().toString()
 }

@@ -19,11 +19,11 @@ class IrsDemoWebApplication {
 
     @Bean
     fun rpcClient(): CordaRPCOps {
+        println("MAKING RPC CLIENT!")
         return CordaRPCClient("localhost:10006".parseNetworkHostAndPort()).start("user", "password").proxy
     }
 
     @Bean
-//    @DependsOn("rcp")
     fun objectMapper(@Autowired cordaRPCOps: CordaRPCOps): ObjectMapper {
         val mapper = JacksonSupport.createDefaultMapper(cordaRPCOps)
         registerFinanceJSONMappers(mapper)

@@ -30,7 +30,7 @@ class InterestRatesSwapDemoAPI {
     lateinit var rpc: CordaRPCOps
 
     @PutMapping("demodate")
-    fun storeDemoDate(newDemoDate: LocalDate): ResponseEntity<Any?> {
+    fun storeDemoDate(@RequestBody newDemoDate: LocalDate): ResponseEntity<Any?> {
         val priorDemoDate = fetchDemoDate()
         // Can only move date forwards
         if (newDemoDate.isAfter(priorDemoDate)) {

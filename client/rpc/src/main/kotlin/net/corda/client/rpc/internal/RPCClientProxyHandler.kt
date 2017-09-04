@@ -232,6 +232,7 @@ class RPCClientProxyHandler(
                 if (replyFuture == null) {
                     log.error("RPC reply arrived to unknown RPC ID ${serverToClient.id}, this indicates an internal RPC error.")
                 } else {
+                    log.info("Received RPC ID ${serverToClient.id}")
                     val result = serverToClient.result
                     when (result) {
                         is Try.Success -> replyFuture.set(result.value)
