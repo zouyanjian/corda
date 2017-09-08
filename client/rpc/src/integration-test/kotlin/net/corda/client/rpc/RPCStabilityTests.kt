@@ -2,7 +2,9 @@ package net.corda.client.rpc
 
 import net.corda.client.rpc.internal.RPCClient
 import net.corda.client.rpc.internal.RPCClientConfiguration
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.crypto.random63BitValue
+import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.internal.concurrent.fork
 import net.corda.core.internal.concurrent.transpose
 import net.corda.core.messaging.RPCOps
@@ -323,6 +325,28 @@ class RPCStabilityTests {
 
             // We are consuming slower than the server is producing, so we should be kicked after a while
             pollUntilClientNumber(server, 0)
+        }
+    }
+
+    class Unserialisable
+
+    interface UnserialisableOps : RPCOps {
+        fun unserialisableObservation(): CordaFuture<Unserialisable>
+    }
+
+    @Test
+    fun `unserialisable object in reply`() {
+        rpcDriver {
+            val server = startRpcServer<UnserialisableOps>(
+                    ops = object : UnserialisableOps {
+                        override val protocolVersion = 0
+                        override fun unserialisableObservation(): CordaFuture<Unserialisable> {
+                            return doneFuture(Unserialisable())
+                        }
+                    }
+            ).get()
+            val client = startRpcClient<UnserialisableOps>(server.broker.hostAndPort!!).get()
+            client.unserialisableObservation().get()
         }
     }
 
