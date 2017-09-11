@@ -8,6 +8,7 @@ import net.corda.core.crypto.keys
 import net.corda.core.identity.Party
 import net.corda.core.internal.Emoji
 import net.corda.core.node.ServicesForResolution
+import net.corda.core.node.services.AttachmentId
 import net.corda.core.serialization.CordaSerializable
 import java.security.PublicKey
 import java.security.SignatureException
@@ -63,8 +64,9 @@ data class WireTransaction(
     fun toLedgerTransaction(services: ServicesForResolution): LedgerTransaction {
         return toLedgerTransaction(
                 resolveIdentity = { services.identityService.partyFromKey(it) },
-                resolveAttachment = { services.attachments.openAttachment(it) },
-                resolveStateRef = { services.loadState(it) }
+                resolveAttachment = { services.attachments.openAttachment(it)},
+                resolveStateRef = { services.loadState(it) },
+                resolveContractAttachment = { services.cordappService.getContractAttachmentID(it.contract) }
         )
     }
 
@@ -79,18 +81,20 @@ data class WireTransaction(
     fun toLedgerTransaction(
             resolveIdentity: (PublicKey) -> Party?,
             resolveAttachment: (SecureHash) -> Attachment?,
-            resolveStateRef: (StateRef) -> TransactionState<*>?
+            resolveStateRef: (StateRef) -> TransactionState<*>?,
+            resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?
     ): LedgerTransaction {
         // Look up public keys to authenticated identities. This is just a stub placeholder and will all change in future.
         val authenticatedArgs = commands.map {
             val parties = it.signers.mapNotNull { pk -> resolveIdentity(pk) }
             CommandWithParties(it.signers, parties, it.value)
         }
-        // Open attachments specified in this transaction. If we haven't downloaded them, we fail.
-        val attachments = attachments.map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }
         val resolvedInputs = inputs.map { ref ->
             resolveStateRef(ref)?.let { StateAndRef(it, ref) } ?: throw TransactionResolutionException(ref.txhash)
         }
+        // Open attachments specified in this transaction. If we haven't downloaded them, we fail.
+        val attachments = (attachments + findAttachmentContracts(resolvedInputs, resolveContractAttachment))
+                .map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }
         return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt)
     }
 
@@ -125,5 +129,17 @@ data class WireTransaction(
         for (command in commands) buf.appendln("${Emoji.diamond}COMMAND:    $command")
         for (attachment in attachments) buf.appendln("${Emoji.paperclip}ATTACHMENT: $attachment")
         return buf.toString()
+    }
+
+    private fun findAttachmentContracts(resolvedInputs: List<StateAndRef<ContractState>>,
+                                        resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?
+    ): List<AttachmentId> {
+        val contractAttachments = (outputs + resolvedInputs.map { it.state }).map { Pair(it, resolveContractAttachment(it)) }
+        val missingAttachments = contractAttachments.filter { it.second == null }
+        return if(missingAttachments.isEmpty()) {
+            contractAttachments.mapNotNull { it.second }
+        } else {
+            throw MissingContractAttachments(missingAttachments.map { it.first })
+        }
     }
 }

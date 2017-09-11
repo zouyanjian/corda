@@ -1,6 +1,8 @@
 package net.corda.node.services.api
 
 import net.corda.core.concurrent.CordaFuture
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.cordapp.CordappService
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowInitiator
 import net.corda.core.flows.FlowLogic
@@ -20,6 +22,7 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.loggerFor
 import net.corda.node.internal.InitiatedFlowFactory
+import net.corda.node.internal.cordapp.CordappProvider
 import net.corda.node.services.config.NodeConfiguration
 import net.corda.node.services.messaging.MessagingService
 import net.corda.node.services.statemachine.FlowLogicRefFactoryImpl

@@ -5,6 +5,8 @@ import com.google.common.collect.Lists
 import com.google.common.collect.MutableClassToInstanceMap
 import com.google.common.util.concurrent.MoreExecutors
 import net.corda.core.concurrent.CordaFuture
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.cordapp.CordappService
 import net.corda.core.crypto.*
 import net.corda.core.flows.*
 import net.corda.core.flows.ContractUpgradeFlow.Acceptor
@@ -724,6 +726,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         override val myInfo: NodeInfo get() = info
         override val database: CordaPersistence get() = this@AbstractNode.database
         override val configuration: NodeConfiguration get() = this@AbstractNode.configuration
+        override val cordappService: CordappService = this@AbstractNode.cordappProvider
 
         override fun <T : SerializeAsToken> cordaService(type: Class<T>): T {
             require(type.isAnnotationPresent(CordaService::class.java)) { "${type.name} is not a Corda service" }

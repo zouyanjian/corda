@@ -16,6 +16,9 @@ sealed class TransactionVerificationException(val txId: SecureHash, message: Str
     class ContractRejection(txId: SecureHash, contract: Contract, cause: Throwable)
         : TransactionVerificationException(txId, "Contract verification failed: ${cause.message}, contract: $contract", cause)
 
+    class ContractConstraintRejection(txId: SecureHash, contractClass: String)
+        : TransactionVerificationException(txId, "Contract constraints failed, could not create contract class: $contractClass", null)
+
     class ContractCreationError(txId: SecureHash, contractClass: String, cause: Throwable)
         : TransactionVerificationException(txId, "Contract verification failed: ${cause.message}, could not create contract class: $contractClass", cause)
 

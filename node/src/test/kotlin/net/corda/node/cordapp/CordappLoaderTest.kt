@@ -1,8 +1,8 @@
 package net.corda.node.cordapp
 
+import net.corda.core.cordapp.Cordapp
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
-import net.corda.node.internal.cordapp.Cordapp
 import net.corda.node.internal.cordapp.CordappLoader
 import org.junit.Assert
 import org.junit.Test

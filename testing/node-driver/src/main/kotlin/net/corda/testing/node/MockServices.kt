@@ -1,5 +1,7 @@
 package net.corda.testing.node
 
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.cordapp.CordappService
 import net.corda.core.crypto.*
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.PartyAndCertificate
@@ -13,6 +15,8 @@ import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.NonEmptySet
 import net.corda.node.VersionInfo
+import net.corda.node.internal.cordapp.CordappLoader
+import net.corda.node.internal.cordapp.CordappProvider
 import net.corda.node.services.api.StateMachineRecordedTransactionMappingStorage
 import net.corda.node.services.api.WritableTransactionStorage
 import net.corda.node.services.identity.InMemoryIdentityService
@@ -31,6 +35,7 @@ import net.corda.testing.*
 import org.bouncycastle.operator.ContentSigner
 import rx.Observable
 import rx.subjects.PublishSubject
+import java.nio.file.Paths
 import java.security.KeyPair
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -157,6 +162,7 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         return NodeInfo(emptyList(), listOf(identity), 1,  serial = 1L)
     }
     override val transactionVerifierService: TransactionVerifierService get() = InMemoryTransactionVerifierService(2)
+    override val cordappService: CordappService = CordappProvider(attachments, CordappLoader.createDefault(Paths.get(".")))
 
     lateinit var hibernatePersister: HibernateObserver
 

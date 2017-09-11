@@ -8,6 +8,8 @@ import net.corda.core.serialization.CordaSerializable
 import java.util.*
 import java.util.function.Predicate
 
+data class ContractAndAttachment(val attachment: Attachment, val contractName: ContractClassName)
+
 /**
  * A LedgerTransaction is derived from a [WireTransaction]. It is the result of doing the following operations:
  *
@@ -61,7 +63,28 @@ data class LedgerTransaction(
      * @throws TransactionVerificationException if anything goes wrong.
      */
     @Throws(TransactionVerificationException::class)
-    fun verify() = verifyContracts()
+    fun verify() {
+        verifyConstraints()
+        verifyContracts()
+    }
+
+    /**
+     * Verify that all contract constraints are valid for each state before running any contract code
+     *
+     * @throws TransactionVerificationException if the constraints fail to verify
+     */
+    private fun verifyConstraints() {
+        (inputs.map { it.state } + outputs).forEach { state ->
+            val contractAndAttachment = attachments.filter { it is ContractAttachment }.map { it as ContractAttachment }.find { it.contracts.contains(state.contract) }
+            if (contractAndAttachment == null) {
+                throw TransactionVerificationException.ContractConstraintRejection(id, state.contract)
+            }
+
+            if(!state.constraint.isSatisfiedBy(contractAndAttachment)) {
+                throw TransactionVerificationException.ContractConstraintRejection(id, state.contract)
+            }
+        }
+    }
 
     /**
      * Check the transaction is contract-valid by running the verify() for each input and output state contract.

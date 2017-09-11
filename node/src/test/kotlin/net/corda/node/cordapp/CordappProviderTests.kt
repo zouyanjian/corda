@@ -1,5 +1,6 @@
 package net.corda.node.cordapp
 
+import net.corda.core.node.services.AttachmentStorage
 import net.corda.node.internal.cordapp.CordappLoader
 import net.corda.node.internal.cordapp.CordappProvider
 import net.corda.testing.node.MockAttachmentStorage
@@ -31,5 +32,20 @@ class CordappProviderTests {
         provider.start()
         
         Assert.assertNull(provider.getCordappAttachmentId(provider.cordapps.first()))
+    }
+
+    @Test
+    fun `test that we find a cordapp class that is loaded into the store`() {
+        val attachmentStore = MockAttachmentStorage()
+        val isolatedJAR = this::class.java.getResource("isolated.jar")!!
+        val loader = CordappLoader.createDevMode(listOf(isolatedJAR))
+        val provider = CordappProvider(attachmentStore, loader)
+        val className = "net.corda.finance.contracts.isolated.AnotherDummyContract"
+
+        val expected = provider.cordapps.first()
+        val actual = provider.getCordappForClass(className)
+
+        Assert.assertNotNull(actual)
+        Assert.assertEquals(expected, actual)
     }
 }

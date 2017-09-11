@@ -1,14 +1,33 @@
 package net.corda.node.internal.cordapp
 
 import com.google.common.collect.HashBiMap
+import net.corda.core.contracts.ContractClassName
 import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.AttachmentStorage
-import java.util.*
+import net.corda.core.cordapp.Cordapp
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.cordapp.CordappService
+import net.corda.core.node.services.AttachmentId
 
 /**
  * Cordapp provider and store. For querying CorDapps for their attachment and vice versa.
  */
-class CordappProvider(private val attachmentStorage: AttachmentStorage, private val cordappLoader: CordappLoader) {
+class CordappProvider(private val attachmentStorage: AttachmentStorage, private val cordappLoader: CordappLoader) : CordappService {
+    override fun getAppContext(): CordappContext {
+        Exception().stackTrace.forEach { stackFrame ->
+            val cordapp = getCordappForClass(stackFrame.className)
+            if(cordapp != null) {
+                return getAppContext(cordapp)
+            }
+        }
+
+        throw IllegalStateException("Not in an app context")
+    }
+
+    override fun getContractAttachmentID(contractClassName: ContractClassName): AttachmentId? {
+        return cordapps.find { it.contractClassNames.contains(contractClassName) }?.let { getAppContext(it).attachmentId }
+    }
+
     /**
      * Current known CorDapps loaded on this node
      */
@@ -34,5 +53,27 @@ class CordappProvider(private val attachmentStorage: AttachmentStorage, private 
         val cordappsWithAttachments = cordapps.filter { !it.contractClassNames.isEmpty() }
         val attachmentIds = cordappsWithAttachments.map { it.jarPath.openStream().use { attachmentStorage.importAttachment(it) } }
         return attachmentIds.zip(cordappsWithAttachments).toMap()
+    }
+
+    /**
+     * Get the current cordapp context for the given CorDapp
+     *
+     * @param cordapp The cordapp to get the context for
+     * @return A cordapp context for the given CorDapp
+     */
+    fun getAppContext(cordapp: Cordapp): CordappContext {
+        return CordappContext(cordapp, getCordappAttachmentId(cordapp), cordappLoader.appClassLoader)
+    }
+
+    /**
+     * Resolves a cordapp for the provided class or null if there isn't one
+     *
+     * @param className The class name
+     * @return cordapp A cordapp or null if no cordapp has the given class loaded
+     */
+    fun getCordappForClass(className: String): Cordapp? {
+        return cordapps.find {
+            ((it.rpcFlows + it.initiatedFlows + it.services + it.plugins.map { it.javaClass }).map { it.name } + it.contractClassNames).contains(className)
+        }
     }
 }

@@ -1,6 +1,8 @@
 package net.corda.core.node
 
 import net.corda.core.contracts.*
+import net.corda.core.cordapp.CordappContext
+import net.corda.core.cordapp.CordappService
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SignableData
 import net.corda.core.crypto.SignatureMetadata
@@ -27,6 +29,9 @@ interface ServicesForResolution {
 
     /** Provides access to storage of arbitrary JAR files (which may contain only data, no code). */
     val attachments: AttachmentStorage
+
+    /** Provides access to anything relating to cordapps including contract attachment resolution and app context */
+    val cordappService: CordappService
 
     /**
      * Given a [StateRef] loads the referenced transaction and looks up the specified output [ContractState].
