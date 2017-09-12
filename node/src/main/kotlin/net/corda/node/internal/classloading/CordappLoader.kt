@@ -26,6 +26,8 @@ import kotlin.reflect.KClass
  * @property cordappJarPaths The classpath of cordapp JARs
  */
 class CordappLoader private constructor(private val cordappJarPaths: List<URL>) {
+    val cordapps: List<Cordapp> by lazy { loadCordapps() }
+
     @VisibleForTesting
     internal val appClassLoader: ClassLoader = javaClass.classLoader
 
@@ -76,7 +78,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
         internal fun createDevMode(scanJars: List<URL>) = CordappLoader(scanJars)
     }
 
-    fun findCordapps(): List<Cordapp> {
+    private fun loadCordapps(): List<Cordapp> {
         return cordappJarPaths.map { scanCordapp(it) }.map {
             Cordapp(findContractClassNames(it), findInitiatedFlows(it), findRPCFlows(it), findServices(it))
         }

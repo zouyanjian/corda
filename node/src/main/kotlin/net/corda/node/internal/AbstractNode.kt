@@ -30,6 +30,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.cert
 import net.corda.core.utilities.debug
+import net.corda.node.internal.classloading.Cordapp
 import net.corda.node.internal.classloading.CordappLoader
 import net.corda.node.internal.classloading.requireAnnotation
 import net.corda.node.services.NotaryChangeHandler
@@ -214,7 +215,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
 
             installCordaServices()
             registerCordappFlows()
-            _services.rpcFlows += cordappLoader.findCordapps().flatMap { it.rpcFlows }
+            _services.rpcFlows += cordappLoader.cordapps.flatMap { it.rpcFlows }
 
             runOnStop += network::stop
         }
@@ -232,7 +233,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     private class ServiceInstantiationException(cause: Throwable?) : Exception(cause)
 
     private fun installCordaServices() {
-        cordappLoader.findCordapps().flatMap { it.filterEnabledServices(info) }.map {
+        cordappLoader.cordapps.flatMap { it.filterEnabledServices(info) }.map {
             try {
                 installCordaService(it)
             } catch (e: NoSuchMethodException) {
@@ -274,7 +275,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     }
 
     private fun registerCordappFlows() {
-        cordappLoader.findCordapps().flatMap { it.initiatedFlows }
+        cordappLoader.cordapps.flatMap { it.initiatedFlows }
                 .forEach {
                     try {
                         registerInitiatedFlowInternal(it, track = false)
