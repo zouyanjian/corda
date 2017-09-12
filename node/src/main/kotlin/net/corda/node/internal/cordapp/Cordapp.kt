@@ -1,4 +1,4 @@
-package net.corda.node.internal.classloading
+package net.corda.node.internal.cordapp
 
 import net.corda.core.flows.FlowLogic
 import net.corda.core.node.CordaPluginRegistry
@@ -8,8 +8,6 @@ import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.loggerFor
 import java.net.URL
-
-// TODO: Find a better package
 
 /**
  * Defines a CorDapp

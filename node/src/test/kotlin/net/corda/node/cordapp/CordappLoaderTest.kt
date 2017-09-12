@@ -1,16 +1,11 @@
-package net.corda.node.classloading
+package net.corda.node.cordapp
 
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
-import net.corda.node.internal.classloading.Cordapp
-import net.corda.node.internal.classloading.CordappLoader
-import org.junit.After
+import net.corda.node.internal.cordapp.Cordapp
+import net.corda.node.internal.cordapp.CordappLoader
 import org.junit.Assert
-import org.junit.Before
 import org.junit.Test
-import java.net.URL
-import java.net.URLClassLoader
-import java.nio.file.Path
 import java.nio.file.Paths
 
 class DummyFlow : FlowLogic<Unit>() {
@@ -32,9 +27,9 @@ class CordappLoaderTest {
 
     @Test
     fun `test that classes that are in a cordapp are loaded`() {
-        val loader = CordappLoader.createDevMode("net.corda.node.classloading")
+        val loader = CordappLoader.createDevMode("net.corda.node.cordapp")
         val initiatedFlows = loader.cordapps.first().initiatedFlows
-        val expectedClass = loader.appClassLoader.loadClass("net.corda.node.classloading.LoaderTestFlow")
+        val expectedClass = loader.appClassLoader.loadClass("net.corda.node.cordapp.LoaderTestFlow")
         Assert.assertNotNull(initiatedFlows.find { it == expectedClass })
     }
 

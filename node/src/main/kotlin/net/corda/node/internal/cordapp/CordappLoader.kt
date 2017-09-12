@@ -1,4 +1,4 @@
-package net.corda.node.internal.classloading
+package net.corda.node.internal.cordapp
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult
@@ -12,6 +12,7 @@ import net.corda.core.node.CordaPluginRegistry
 import net.corda.core.node.services.CordaService
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.loggerFor
+import net.corda.node.internal.classloading.requireAnnotation
 import java.lang.reflect.Modifier
 import java.net.JarURLConnection
 import java.net.URI
@@ -21,9 +22,6 @@ import java.nio.file.Path
 import java.util.*
 import java.util.stream.Collectors
 import kotlin.reflect.KClass
-
-// TODO: Find a better package
-
 /**
  * Handles CorDapp loading and classpath scanning of CorDapp JARs
  *

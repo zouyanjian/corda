@@ -30,8 +30,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.cert
 import net.corda.core.utilities.debug
-import net.corda.node.internal.classloading.Cordapp
-import net.corda.node.internal.classloading.CordappLoader
+import net.corda.node.internal.cordapp.CordappLoader
 import net.corda.node.internal.classloading.requireAnnotation
 import net.corda.node.services.NotaryChangeHandler
 import net.corda.node.services.NotifyTransactionHandler
@@ -75,7 +74,6 @@ import rx.Observable
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.security.KeyPair
 import java.security.KeyStoreException
 import java.security.cert.CertificateFactory
