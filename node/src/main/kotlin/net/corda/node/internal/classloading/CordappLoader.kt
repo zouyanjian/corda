@@ -8,36 +8,26 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.internal.*
-import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.CordaService
-import net.corda.core.node.services.ServiceType
 import net.corda.core.serialization.SerializeAsToken
-import net.corda.core.utilities.debug
 import net.corda.core.utilities.loggerFor
 import java.lang.reflect.Modifier
 import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.*
 import java.util.stream.Collectors
 import kotlin.reflect.KClass
-
-data class Cordapp(
-        val contractClassNames: List<String>,
-        val initiatedFlows: List<Class<out FlowLogic<*>>>,
-        val rpcFlows: List<Class<out FlowLogic<*>>>)
 
 /**
  * Handles CorDapp loading and classpath scanning of CorDapp JARs
  *
  * @property cordappJarPaths The classpath of cordapp JARs
  */
-class CordappLoader private constructor (private val cordappJarPaths: List<URL>) {
+class CordappLoader private constructor(private val cordappJarPaths: List<URL>) {
     @VisibleForTesting
     internal val appClassLoader: ClassLoader = javaClass.classLoader
-    private val scanResult = scanCordapps()
 
     companion object {
         private val logger = loggerFor<CordappLoader>()
@@ -45,7 +35,7 @@ class CordappLoader private constructor (private val cordappJarPaths: List<URL>)
         /**
          * Creates a default CordappLoader intended to be used in non-dev or non-test environments.
          *
-         * @param   basedir The directory that this node is running in. Will use this to resolve the plugins directory
+         * @param basedir The directory that this node is running in. Will use this to resolve the plugins directory
          *                  for classpath scanning.
          */
         fun createDefault(baseDir: Path): CordappLoader {
@@ -58,7 +48,7 @@ class CordappLoader private constructor (private val cordappJarPaths: List<URL>)
         /**
          * Creates a dev mode CordappLoader intended to only be used in test environments.
          *
-         * @param   scanPackage Resolves the JARs that contain scanPackage and use them as the source for
+         * @param scanPackage Resolves the JARs that contain scanPackage and use them as the source for
          *                      the classpath scanning.
          */
         fun createDevMode(scanPackage: String): CordappLoader {
@@ -80,42 +70,21 @@ class CordappLoader private constructor (private val cordappJarPaths: List<URL>)
         /**
          * Creates a dev mode CordappLoader intended only to be used in test environments
          *
-         * @param   scanJars    Uses the JAR URLs provided for classpath scanning and Cordapp detection
+         * @param scanJars Uses the JAR URLs provided for classpath scanning and Cordapp detection
          */
-        fun createDevMode(scanJars: List<URL>): CordappLoader {
-            return CordappLoader(scanJars)
-        }
+        @VisibleForTesting
+        internal fun createDevMode(scanJars: List<URL>) = CordappLoader(scanJars)
     }
 
     fun findCordapps(): List<Cordapp> {
         return cordappJarPaths.map { scanCordapp(it) }.map {
-            Cordapp(findContractClassNames(it), findInitiatedFlows(it), findRPCFlows(it))
+            Cordapp(findContractClassNames(it), findInitiatedFlows(it), findRPCFlows(it), findServices(it))
         }
     }
 
-    fun findServices(info: NodeInfo): List<Class<out SerializeAsToken>> {
-        fun getServiceType(clazz: Class<*>): ServiceType? {
-            return try {
-                clazz.getField("type").get(null) as ServiceType
-            } catch (e: NoSuchFieldException) {
-                logger.warn("${clazz.name} does not have a type field, optimistically proceeding with install.")
-                null
-            }
-        }
-
+    private fun findServices(scanResult: ScanResult?): List<Class<out SerializeAsToken>> {
         return scanResult?.getClassesWithAnnotation(SerializeAsToken::class, CordaService::class)
-                ?.filter {
-                    val serviceType = getServiceType(it)
-                    if (serviceType != null && info.serviceIdentities(serviceType).isEmpty()) {
-                        logger.debug {
-                            "Ignoring ${it.name} as a Corda service since $serviceType is not one of our " +
-                                    "advertised services"
-                        }
-                        false
-                    } else {
-                        true
-                    }
-                } ?: emptyList<Class<SerializeAsToken>>()
+                ?: emptyList<Class<SerializeAsToken>>()
     }
 
     private fun findInitiatedFlows(scanResult: ScanResult?): List<Class<out FlowLogic<*>>> {
@@ -145,14 +114,6 @@ class CordappLoader private constructor (private val cordappJarPaths: List<URL>)
 
     private fun findContractClassNames(scanResult: ScanResult?): List<String> {
         return scanResult?.getNamesOfClassesImplementing(Contract::class.java)!!
-    }
-
-    private fun scanCordapps(): ScanResult? {
-        logger.info("Scanning CorDapps in $cordappJarPaths")
-        return if (cordappJarPaths.isNotEmpty())
-            FastClasspathScanner().addClassLoader(appClassLoader).overrideClasspath(cordappJarPaths).scan()
-        else
-            null
     }
 
     private fun scanCordapp(cordappJarPath: URL): ScanResult? {

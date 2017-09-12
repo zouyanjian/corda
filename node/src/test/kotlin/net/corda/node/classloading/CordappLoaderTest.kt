@@ -44,7 +44,8 @@ class CordappLoaderTest {
         val expectedCordapp = Cordapp(
                 listOf("net.corda.finance.contracts.isolated.AnotherDummyContract"),
                 emptyList(),
-                listOf(loader.appClassLoader.loadClass("net.corda.core.flows.ContractUpgradeFlow\$Initiator") as Class<FlowLogic<*>>))
+                listOf(loader.appClassLoader.loadClass("net.corda.core.flows.ContractUpgradeFlow\$Initiator") as Class<FlowLogic<*>>),
+                emptyList())
         val expected = arrayOf(expectedCordapp)
         Assert.assertArrayEquals(expected, loader.findCordapps().toTypedArray())
     }
