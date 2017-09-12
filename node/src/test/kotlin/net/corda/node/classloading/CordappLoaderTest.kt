@@ -35,4 +35,12 @@ class CordappLoaderTest {
         val expectedClass = loader.appClassLoader.loadClass("net.corda.node.classloading.LoaderTestFlow")
         Assert.assertNotNull(initiatedFlows.find { it == expectedClass })
     }
+
+    @Test
+    fun `isolated JAR contains a contract`() {
+        val isolatedJAR = CordappLoaderTest::class.java.getResource("isolated.jar")!!
+        val loader = CordappLoader.createDevMode(listOf(isolatedJAR))
+        val expected = arrayOf("net.corda.finance.contracts.isolated.AnotherDummyContract")
+        Assert.assertArrayEquals(expected, loader.findContractClassNames().toTypedArray())
+    }
 }

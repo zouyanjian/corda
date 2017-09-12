@@ -2,6 +2,7 @@ package net.corda.node.internal.classloading
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult
+import net.corda.core.contracts.Contract
 import net.corda.core.flows.ContractUpgradeFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
@@ -19,6 +20,7 @@ import net.corda.core.utilities.loggerFor
 import java.lang.reflect.Modifier
 import java.net.JarURLConnection
 import java.net.URI
+import java.net.URL
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
@@ -28,7 +30,7 @@ import kotlin.reflect.KClass
 /**
  * Handles CorDapp loading and classpath scanning
  */
-class CordappLoader private constructor (val cordappClassPath: List<Path>) {
+class CordappLoader private constructor (val cordappClassPath: List<URL>) {
     val appClassLoader: ClassLoader = javaClass.classLoader
     val scanResult = scanCordapps()
 
@@ -43,8 +45,8 @@ class CordappLoader private constructor (val cordappClassPath: List<Path>) {
          */
         fun createDefault(baseDir: Path): CordappLoader {
             val pluginsDir = baseDir / "plugins"
-            return CordappLoader(if (!pluginsDir.exists()) emptyList<Path>() else pluginsDir.list {
-                it.filter { it.isRegularFile() && it.toString().endsWith(".jar") }.collect(Collectors.toList())
+            return CordappLoader(if (!pluginsDir.exists()) emptyList<URL>() else pluginsDir.list {
+                it.filter { it.isRegularFile() && it.toString().endsWith(".jar") }.collect(Collectors.toList()).map { it.toUri().toURL() }
             })
         }
 
@@ -64,10 +66,17 @@ class CordappLoader private constructor (val cordappClassPath: List<Path>) {
                         } else {
                             URI(it.toExternalForm().removeSuffix(resource))
                         }
-                        Paths.get(uri)
+                        uri.toURL()
                     }
                     .toList()
             return CordappLoader(paths)
+        }
+
+        /**
+         *
+         */
+        fun createDevMode(scanJars: List<URL>): CordappLoader {
+            return CordappLoader(scanJars)
         }
     }
 
@@ -119,6 +128,10 @@ class CordappLoader private constructor (val cordappClassPath: List<Path>) {
         val found = scanResult?.getClassesWithAnnotation(FlowLogic::class, StartableByRPC::class)?.filter { it.isUserInvokable() } ?: emptyList<Class<out FlowLogic<*>>>()
         val coreFlows = listOf(ContractUpgradeFlow.Initiator::class.java)
         return found + coreFlows
+    }
+
+    fun findContractClassNames(): List<String> {
+        return scanResult?.getNamesOfClassesImplementing(Contract::class.java)!!
     }
 
     private fun scanCordapps(): ScanResult? {
