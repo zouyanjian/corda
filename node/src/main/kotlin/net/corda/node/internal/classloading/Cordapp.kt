@@ -7,6 +7,7 @@ import net.corda.core.node.services.ServiceType
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.loggerFor
+import java.net.URL
 
 // TODO: Find a better package
 
@@ -17,13 +18,16 @@ import net.corda.core.utilities.loggerFor
  * @property initiatedFlows List of initiatable flow classes
  * @property rpcFlows List of RPC initiable flows classes
  * @property servies List of RPC services
+ * @property plugins List of Corda plugin registries
+ * @property jarPath The path to the JAR for this CorDapp
  */
 data class Cordapp(
         val contractClassNames: List<String>,
         val initiatedFlows: List<Class<out FlowLogic<*>>>,
         val rpcFlows: List<Class<out FlowLogic<*>>>,
         val services: List<Class<out SerializeAsToken>>,
-        val plugins: List<CordaPluginRegistry>) {
+        val plugins: List<CordaPluginRegistry>,
+        val jarPath: URL) {
     companion object {
         private val logger = loggerFor<Cordapp>()
     }

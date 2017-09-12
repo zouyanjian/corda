@@ -85,7 +85,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
     private fun loadCordapps(): List<Cordapp> {
         return cordappJarPaths.map {
             val scanResult = scanCordapp(it)
-            Cordapp(findContractClassNames(scanResult), findInitiatedFlows(scanResult), findRPCFlows(scanResult), findServices(scanResult), findPlugins(it))
+            Cordapp(findContractClassNames(scanResult), findInitiatedFlows(scanResult), findRPCFlows(scanResult), findServices(scanResult), findPlugins(it), it)
         }
     }
 

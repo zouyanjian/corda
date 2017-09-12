@@ -8,6 +8,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.net.URL
 import java.net.URLClassLoader
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -46,7 +47,8 @@ class CordappLoaderTest {
                 emptyList(),
                 listOf(loader.appClassLoader.loadClass("net.corda.core.flows.ContractUpgradeFlow\$Initiator") as Class<FlowLogic<*>>),
                 emptyList(),
-                emptyList())
+                emptyList(),
+                isolatedJAR)
         val expected = arrayOf(expectedCordapp)
         Assert.assertArrayEquals(expected, loader.cordapps.toTypedArray())
     }
