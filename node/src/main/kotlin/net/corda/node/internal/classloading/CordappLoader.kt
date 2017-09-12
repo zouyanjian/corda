@@ -8,6 +8,7 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.internal.*
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.core.node.services.CordaService
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.loggerFor
@@ -15,10 +16,13 @@ import java.lang.reflect.Modifier
 import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
+import java.net.URLClassLoader
 import java.nio.file.Path
 import java.util.*
 import java.util.stream.Collectors
 import kotlin.reflect.KClass
+
+// TODO: Find a better package
 
 /**
  * Handles CorDapp loading and classpath scanning of CorDapp JARs
@@ -79,8 +83,9 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
     }
 
     private fun loadCordapps(): List<Cordapp> {
-        return cordappJarPaths.map { scanCordapp(it) }.map {
-            Cordapp(findContractClassNames(it), findInitiatedFlows(it), findRPCFlows(it), findServices(it))
+        return cordappJarPaths.map {
+            val scanResult = scanCordapp(it)
+            Cordapp(findContractClassNames(scanResult), findInitiatedFlows(scanResult), findRPCFlows(scanResult), findServices(scanResult), findPlugins(it))
         }
     }
 
@@ -116,6 +121,10 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
 
     private fun findContractClassNames(scanResult: ScanResult?): List<String> {
         return scanResult?.getNamesOfClassesImplementing(Contract::class.java)!!
+    }
+
+    private fun findPlugins(cordappJarPath: URL): List<CordaPluginRegistry> {
+        return ServiceLoader.load(CordaPluginRegistry::class.java, URLClassLoader(arrayOf(cordappJarPath), null)).toList()
     }
 
     private fun scanCordapp(cordappJarPath: URL): ScanResult? {

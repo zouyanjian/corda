@@ -68,6 +68,7 @@ import net.corda.node.services.vault.NodeVaultService
 import net.corda.node.services.vault.VaultSoftLockManager
 import net.corda.node.utilities.*
 import net.corda.node.utilities.AddOrRemove.ADD
+import net.corda.nodeapi.internal.serialization.DefaultWhitelist
 import org.apache.activemq.artemis.utils.ReusableLatch
 import org.slf4j.Logger
 import rx.Observable
@@ -149,11 +150,6 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         CordaX500Name.build(cert.subject).copy(commonName = null)
     }
 
-    /** Fetch CordaPluginRegistry classes registered in META-INF/services/net.corda.core.node.CordaPluginRegistry files that exist in the classpath */
-    open val pluginRegistries: List<CordaPluginRegistry> by lazy {
-        ServiceLoader.load(CordaPluginRegistry::class.java).toList()
-    }
-
     val cordappLoader: CordappLoader by lazy {
         val scanPackage = System.getProperty("net.corda.node.cordapp.scan.package")
         if (scanPackage != null) {
@@ -162,6 +158,10 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         } else {
             CordappLoader.createDefault(configuration.baseDirectory)
         }
+    }
+
+    open val pluginRegistries: List<CordaPluginRegistry> by lazy {
+        cordappLoader.cordapps.flatMap { it.plugins } + DefaultWhitelist()
     }
 
     /** Set to true once [start] has been successfully called. */

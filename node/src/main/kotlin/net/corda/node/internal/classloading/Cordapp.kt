@@ -1,11 +1,14 @@
 package net.corda.node.internal.classloading
 
 import net.corda.core.flows.FlowLogic
+import net.corda.core.node.CordaPluginRegistry
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.ServiceType
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.debug
 import net.corda.core.utilities.loggerFor
+
+// TODO: Find a better package
 
 /**
  * Defines a CorDapp
@@ -19,7 +22,8 @@ data class Cordapp(
         val contractClassNames: List<String>,
         val initiatedFlows: List<Class<out FlowLogic<*>>>,
         val rpcFlows: List<Class<out FlowLogic<*>>>,
-        val services: List<Class<out SerializeAsToken>>) {
+        val services: List<Class<out SerializeAsToken>>,
+        val plugins: List<CordaPluginRegistry>) {
     companion object {
         private val logger = loggerFor<Cordapp>()
     }

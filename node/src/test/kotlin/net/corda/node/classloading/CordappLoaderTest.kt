@@ -26,13 +26,13 @@ class CordappLoaderTest {
     fun `test that classes that aren't in cordapps aren't loaded`() {
         // Basedir will not be a corda node directory so the dummy flow shouldn't be recognised as a part of a cordapp
         val loader = CordappLoader.createDefault(Paths.get("."))
-        Assert.assertTrue(loader.findCordapps().isEmpty())
+        Assert.assertTrue(loader.cordapps.isEmpty())
     }
 
     @Test
     fun `test that classes that are in a cordapp are loaded`() {
         val loader = CordappLoader.createDevMode("net.corda.node.classloading")
-        val initiatedFlows = loader.findCordapps().first().initiatedFlows
+        val initiatedFlows = loader.cordapps.first().initiatedFlows
         val expectedClass = loader.appClassLoader.loadClass("net.corda.node.classloading.LoaderTestFlow")
         Assert.assertNotNull(initiatedFlows.find { it == expectedClass })
     }
@@ -45,8 +45,9 @@ class CordappLoaderTest {
                 listOf("net.corda.finance.contracts.isolated.AnotherDummyContract"),
                 emptyList(),
                 listOf(loader.appClassLoader.loadClass("net.corda.core.flows.ContractUpgradeFlow\$Initiator") as Class<FlowLogic<*>>),
+                emptyList(),
                 emptyList())
         val expected = arrayOf(expectedCordapp)
-        Assert.assertArrayEquals(expected, loader.findCordapps().toTypedArray())
+        Assert.assertArrayEquals(expected, loader.cordapps.toTypedArray())
     }
 }
