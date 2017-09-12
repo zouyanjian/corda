@@ -7,10 +7,7 @@ import net.corda.core.flows.ContractUpgradeFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.StartableByRPC
-import net.corda.core.internal.div
-import net.corda.core.internal.exists
-import net.corda.core.internal.isRegularFile
-import net.corda.core.internal.list
+import net.corda.core.internal.*
 import net.corda.core.node.NodeInfo
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.ServiceType
@@ -38,7 +35,7 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
         private val logger = loggerFor<CordappLoader>()
 
         /**
-         * Creates the default CordappLoader intended to be used in non-dev or non-test environments.
+         * Creates a default CordappLoader intended to be used in non-dev or non-test environments.
          *
          * @param   basedir The directory that this node is running in. Will use this to resolve the plugins directory
          *                  for classpath scanning.
@@ -51,7 +48,7 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
         }
 
         /**
-         * Creates the dev mode CordappLoader intended to only be used in dev or test environments.
+         * Creates a dev mode CordappLoader intended to only be used in test environments.
          *
          * @param   scanPackage Resolves the JARs that contain scanPackage and use them as the source for
          *                      the classpath scanning.
@@ -73,7 +70,9 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
         }
 
         /**
+         * Creates a dev mode CordappLoader intended only to be used in test environments
          *
+         * @param   scanJars    Uses the JAR URLs provided for classpath scanning and Cordapp detection
          */
         fun createDevMode(scanJars: List<URL>): CordappLoader {
             return CordappLoader(scanJars)
