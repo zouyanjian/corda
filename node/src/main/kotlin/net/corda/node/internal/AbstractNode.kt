@@ -214,7 +214,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
 
             installCordaServices()
             registerCordappFlows()
-            _services.rpcFlows += cordappLoader.findRPCFlows()
+            _services.rpcFlows += cordappLoader.findCordapps().flatMap { it.rpcFlows }
 
             runOnStop += network::stop
         }
@@ -274,7 +274,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     }
 
     private fun registerCordappFlows() {
-        cordappLoader.findInitiatedFlows()
+        cordappLoader.findCordapps().flatMap { it.initiatedFlows }
                 .forEach {
                     try {
                         registerInitiatedFlowInternal(it, track = false)

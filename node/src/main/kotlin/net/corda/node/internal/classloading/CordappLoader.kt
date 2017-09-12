@@ -24,12 +24,20 @@ import java.util.*
 import java.util.stream.Collectors
 import kotlin.reflect.KClass
 
+data class Cordapp(
+        val contractClassNames: List<String>,
+        val initiatedFlows: List<Class<out FlowLogic<*>>>,
+        val rpcFlows: List<Class<out FlowLogic<*>>>)
+
 /**
- * Handles CorDapp loading and classpath scanning
+ * Handles CorDapp loading and classpath scanning of CorDapp JARs
+ *
+ * @property cordappJarPaths The classpath of cordapp JARs
  */
-class CordappLoader private constructor (val cordappClassPath: List<URL>) {
-    val appClassLoader: ClassLoader = javaClass.classLoader
-    val scanResult = scanCordapps()
+class CordappLoader private constructor (private val cordappJarPaths: List<URL>) {
+    @VisibleForTesting
+    internal val appClassLoader: ClassLoader = javaClass.classLoader
+    private val scanResult = scanCordapps()
 
     companion object {
         private val logger = loggerFor<CordappLoader>()
@@ -79,6 +87,12 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
         }
     }
 
+    fun findCordapps(): List<Cordapp> {
+        return cordappJarPaths.map { scanCordapp(it) }.map {
+            Cordapp(findContractClassNames(it), findInitiatedFlows(it), findRPCFlows(it))
+        }
+    }
+
     fun findServices(info: NodeInfo): List<Class<out SerializeAsToken>> {
         fun getServiceType(clazz: Class<*>): ServiceType? {
             return try {
@@ -104,7 +118,7 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
                 } ?: emptyList<Class<SerializeAsToken>>()
     }
 
-    fun findInitiatedFlows(): List<Class<out FlowLogic<*>>> {
+    private fun findInitiatedFlows(scanResult: ScanResult?): List<Class<out FlowLogic<*>>> {
         return scanResult?.getClassesWithAnnotation(FlowLogic::class, InitiatedBy::class)
                 // First group by the initiating flow class in case there are multiple mappings
                 ?.groupBy { it.requireAnnotation<InitiatedBy>().value.java }
@@ -119,7 +133,7 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
                 } ?: emptyList<Class<out FlowLogic<*>>>()
     }
 
-    fun findRPCFlows(): List<Class<out FlowLogic<*>>> {
+    private fun findRPCFlows(scanResult: ScanResult?): List<Class<out FlowLogic<*>>> {
         fun Class<out FlowLogic<*>>.isUserInvokable(): Boolean {
             return Modifier.isPublic(modifiers) && !isLocalClass && !isAnonymousClass && (!isMemberClass || Modifier.isStatic(modifiers))
         }
@@ -129,14 +143,22 @@ class CordappLoader private constructor (val cordappClassPath: List<URL>) {
         return found + coreFlows
     }
 
-    fun findContractClassNames(): List<String> {
+    private fun findContractClassNames(scanResult: ScanResult?): List<String> {
         return scanResult?.getNamesOfClassesImplementing(Contract::class.java)!!
     }
 
     private fun scanCordapps(): ScanResult? {
-        logger.info("Scanning CorDapps in $cordappClassPath")
-        return if (cordappClassPath.isNotEmpty())
-            FastClasspathScanner().addClassLoader(appClassLoader).overrideClasspath(cordappClassPath).scan()
+        logger.info("Scanning CorDapps in $cordappJarPaths")
+        return if (cordappJarPaths.isNotEmpty())
+            FastClasspathScanner().addClassLoader(appClassLoader).overrideClasspath(cordappJarPaths).scan()
+        else
+            null
+    }
+
+    private fun scanCordapp(cordappJarPath: URL): ScanResult? {
+        logger.info("Scanning CorDapp in $cordappJarPaths")
+        return if (cordappJarPaths.isNotEmpty())
+            FastClasspathScanner().addClassLoader(appClassLoader).overrideClasspath(cordappJarPath).scan()
         else
             null
     }
