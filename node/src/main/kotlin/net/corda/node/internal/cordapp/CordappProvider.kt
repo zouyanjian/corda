@@ -8,6 +8,7 @@ import net.corda.core.cordapp.Cordapp
 import net.corda.core.cordapp.CordappContext
 import net.corda.core.cordapp.CordappService
 import net.corda.core.node.services.AttachmentId
+import java.net.URLClassLoader
 
 /**
  * Cordapp provider and store. For querying CorDapps for their attachment and vice versa.
@@ -25,7 +26,7 @@ class CordappProvider(private val attachmentStorage: AttachmentStorage, private 
     }
 
     override fun getContractAttachmentID(contractClassName: ContractClassName): AttachmentId? {
-        return cordapps.find { it.contractClassNames.contains(contractClassName) }?.let { getAppContext(it).attachmentId }
+        return getCordappForClass(contractClassName)?.let(this::getCordappAttachmentId)
     }
 
     /**
@@ -62,7 +63,7 @@ class CordappProvider(private val attachmentStorage: AttachmentStorage, private 
      * @return A cordapp context for the given CorDapp
      */
     fun getAppContext(cordapp: Cordapp): CordappContext {
-        return CordappContext(cordapp, getCordappAttachmentId(cordapp), cordappLoader.appClassLoader)
+        return CordappContext(cordapp, getCordappAttachmentId(cordapp), URLClassLoader(arrayOf(cordapp.jarPath), cordappLoader.appClassLoader))
     }
 
     /**

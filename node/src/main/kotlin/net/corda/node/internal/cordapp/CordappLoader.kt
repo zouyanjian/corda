@@ -80,7 +80,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
          * @param scanJars Uses the JAR URLs provided for classpath scanning and Cordapp detection
          */
         @VisibleForTesting
-        internal fun createDevMode(scanJars: List<URL>) = CordappLoader(scanJars)
+        fun createDevMode(scanJars: List<URL>) = CordappLoader(scanJars)
     }
 
     private fun loadCordapps(): List<Cordapp> {

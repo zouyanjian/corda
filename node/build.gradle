@@ -137,6 +137,7 @@ dependencies {
     testCompile project(':test-utils')
     testCompile project(':client:jfx')
     testCompile project(':finance')
+    testCompile project(':finance:isolated') // Must be compileOnly because we classload manually
 
     // sample test schemas
     testCompile project(path: ':finance', configuration: 'testArtifacts')
