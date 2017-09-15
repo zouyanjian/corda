@@ -93,8 +93,8 @@ data class WireTransaction(
             resolveStateRef(ref)?.let { StateAndRef(it, ref) } ?: throw TransactionResolutionException(ref.txhash)
         }
         // Open attachments specified in this transaction. If we haven't downloaded them, we fail.
-        val attachments = (attachments + findAttachmentContracts(resolvedInputs, resolveContractAttachment))
-                .map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }
+        val contractAttachments = findAttachmentContracts(resolvedInputs, resolveContractAttachment, resolveAttachment)
+        val attachments = contractAttachments + (attachments.map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }).distinct()
         return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt)
     }
 
@@ -132,12 +132,13 @@ data class WireTransaction(
     }
 
     private fun findAttachmentContracts(resolvedInputs: List<StateAndRef<ContractState>>,
-                                        resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?
-    ): List<AttachmentId> {
+                                        resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?,
+                                        resolveAttachment: (SecureHash) -> Attachment?
+    ): List<Attachment> {
         val contractAttachments = (outputs + resolvedInputs.map { it.state }).map { Pair(it, resolveContractAttachment(it)) }
         val missingAttachments = contractAttachments.filter { it.second == null }
         return if(missingAttachments.isEmpty()) {
-            contractAttachments.mapNotNull { it.second }
+            contractAttachments.map { ContractAttachment(resolveAttachment(it.second!!) ?: throw AttachmentResolutionException(it.second!!), it.first.contract) }
         } else {
             throw MissingContractAttachments(missingAttachments.map { it.first })
         }
