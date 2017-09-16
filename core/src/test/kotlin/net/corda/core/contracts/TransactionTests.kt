@@ -10,6 +10,8 @@ import net.corda.finance.contracts.asset.DUMMY_CASH_ISSUER_KEY
 import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.contracts.DummyContract
+import net.corda.testing.node.MockAttachment
+import net.corda.testing.node.MockAttachmentStorage
 import org.junit.Test
 import java.security.KeyPair
 import kotlin.test.assertEquals
@@ -33,7 +35,7 @@ class TransactionTests : TestDependencyInjectionBase() {
         val bk = generateKeyPair()
         val ck = generateKeyPair()
         val apub = ak.public
-        val bpub = bk.public
+        val bpub = bk.public    
         val cpub = ck.public
         val c1 = CompositeKey.Builder().addKeys(apub, bpub).build(2)
         val compKey = CompositeKey.Builder().addKeys(c1, cpub).build(1)
@@ -94,11 +96,12 @@ class TransactionTests : TestDependencyInjectionBase() {
 
     @Test
     fun `transactions with no inputs can have any notary`() {
+        val dummyContractAttachment = ContractAttachment(MockAttachment(SecureHash.zeroHash), DUMMY_PROGRAM_ID)
         val baseOutState = TransactionState(DummyContract.SingleOwnerState(0, ALICE), DUMMY_PROGRAM_ID, DUMMY_NOTARY)
         val inputs = emptyList<StateAndRef<*>>()
         val outputs = listOf(baseOutState, baseOutState.copy(notary = ALICE), baseOutState.copy(notary = BOB))
         val commands = emptyList<CommandWithParties<CommandData>>()
-        val attachments = emptyList<Attachment>()
+        val attachments = listOf<Attachment>(dummyContractAttachment)
         val id = SecureHash.randomSHA256()
         val timeWindow: TimeWindow? = null
         val privacySalt: PrivacySalt = PrivacySalt()
