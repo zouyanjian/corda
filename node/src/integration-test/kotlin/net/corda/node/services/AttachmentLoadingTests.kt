@@ -12,6 +12,7 @@ import net.corda.testing.DUMMY_BANK_A
 import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.TestDependencyInjectionBase
 import net.corda.testing.node.MockServices
+import org.junit.Assert
 import org.junit.Test
 
 class AttachmentLoadingTests : TestDependencyInjectionBase() {
@@ -35,5 +36,10 @@ class AttachmentLoadingTests : TestDependencyInjectionBase() {
         val txBuilder = contractClass.newInstance().generateInitial(PartyAndReference(DUMMY_BANK_A, OpaqueBytes(kotlin.ByteArray(1))), 1, DUMMY_NOTARY)
         val ledgerTx = txBuilder.toLedgerTransaction(services)
         ledgerTx.verify()
+
+        val actual = ledgerTx.attachments.first()
+        val expected = services.attachments.openAttachment(services.provider.getAppContext(services.provider.cordapps.first()).attachmentId!!)!!
+
+        Assert.assertEquals(expected, actual)
     }
 }
