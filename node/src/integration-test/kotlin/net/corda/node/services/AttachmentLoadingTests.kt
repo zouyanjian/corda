@@ -18,20 +18,18 @@ import org.junit.Test
 class AttachmentLoadingTests : TestDependencyInjectionBase() {
     private data class State(val data: String = "test", override val participants: List<AbstractParty> = emptyList()) : ContractState
     private class Services : MockServices() {
-        val provider = CordappProvider(attachments, CordappLoader.createDevMode(listOf(isolatedJAR)))
+        val provider = CordappProvider(CordappLoader.createDevMode(listOf(isolatedJAR))).start(attachments)
         override val cordappService: CordappService = provider
     }
 
     companion object {
         private val isolatedJAR = this::class.java.getResource("isolated.jar")!!
-        private val emptyJAR = this::class.java.getResource("empty.jar")!!
         private val ISOLATED_CONTRACT_ID = "net.corda.finance.contracts.isolated.AnotherDummyContract"
     }
 
     @Test
     fun `test a wire transaction has loaded the correct attachment`() {
         val services = Services()
-        services.provider.start()
         val contractClass = services.provider.getAppContext(services.provider.cordapps.first()).classLoader.loadClass(ISOLATED_CONTRACT_ID).asSubclass(AnotherDummyContract::class.java)
         val txBuilder = contractClass.newInstance().generateInitial(PartyAndReference(DUMMY_BANK_A, OpaqueBytes(kotlin.ByteArray(1))), 1, DUMMY_NOTARY)
         val ledgerTx = txBuilder.toLedgerTransaction(services)

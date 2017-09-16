@@ -13,7 +13,7 @@ import java.net.URLClassLoader
 /**
  * Cordapp provider and store. For querying CorDapps for their attachment and vice versa.
  */
-class CordappProvider(private val attachmentStorage: AttachmentStorage, private val cordappLoader: CordappLoader) : CordappService {
+class CordappProvider(private val cordappLoader: CordappLoader) : CordappService {
     override fun getAppContext(): CordappContext {
         Exception().stackTrace.forEach { stackFrame ->
             val cordapp = getCordappForClass(stackFrame.className)
@@ -38,8 +38,9 @@ class CordappProvider(private val attachmentStorage: AttachmentStorage, private 
     /**
      * Should only be called once from the initialisation routine of the node or tests
      */
-    fun start() {
-        cordappAttachments = HashBiMap.create(loadContractsIntoAttachmentStore())
+    fun start(attachmentStorage: AttachmentStorage): CordappProvider {
+        cordappAttachments = HashBiMap.create(loadContractsIntoAttachmentStore(attachmentStorage))
+        return this
     }
 
     /**
@@ -50,7 +51,7 @@ class CordappProvider(private val attachmentStorage: AttachmentStorage, private 
      */
     fun getCordappAttachmentId(cordapp: Cordapp): SecureHash? = cordappAttachments.inverse().get(cordapp)
 
-    private fun loadContractsIntoAttachmentStore(): Map<SecureHash, Cordapp> {
+    private fun loadContractsIntoAttachmentStore(attachmentStorage: AttachmentStorage): Map<SecureHash, Cordapp> {
         val cordappsWithAttachments = cordapps.filter { !it.contractClassNames.isEmpty() }
         val attachmentIds = cordappsWithAttachments.map { it.jarPath.openStream().use { attachmentStorage.importAttachment(it) } }
         return attachmentIds.zip(cordappsWithAttachments).toMap()

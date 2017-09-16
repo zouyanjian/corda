@@ -380,9 +380,10 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
      */
     private fun makeServices(): MutableList<Any> {
         checkpointStorage = DBCheckpointStorage()
+        cordappProvider = CordappProvider(makeCordappLoader())
         _services = ServiceHubInternalImpl()
         attachments = NodeAttachmentService(services.monitoringService.metrics)
-        cordappProvider = CordappProvider(attachments, makeCordappLoader())
+        cordappProvider.start(attachments)
         legalIdentity = obtainIdentity()
         network = makeMessagingService(legalIdentity)
         info = makeInfo(legalIdentity)

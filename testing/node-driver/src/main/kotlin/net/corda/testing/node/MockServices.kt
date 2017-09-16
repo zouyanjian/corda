@@ -162,7 +162,7 @@ open class MockServices(vararg val keys: KeyPair) : ServiceHub {
         return NodeInfo(emptyList(), listOf(identity), 1,  serial = 1L)
     }
     override val transactionVerifierService: TransactionVerifierService get() = InMemoryTransactionVerifierService(2)
-    override val cordappService: CordappService = CordappProvider(attachments, CordappLoader.createDefault(Paths.get(".")))
+    override val cordappService: CordappService = CordappProvider(CordappLoader.createDefault(Paths.get("."))).start(attachments)
 
     lateinit var hibernatePersister: HibernateObserver
 

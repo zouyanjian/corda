@@ -24,9 +24,9 @@ class CordappProviderTests {
     @Test
     fun `isolated jar is loaded into the attachment store`() {
         val loader = CordappLoader.createDevMode(listOf(isolatedJAR))
-        val provider = CordappProvider(attachmentStore, loader)
+        val provider = CordappProvider(loader)
 
-        provider.start()
+        provider.start(attachmentStore)
         val maybeAttachmentId = provider.getCordappAttachmentId(provider.cordapps.first())
 
         Assert.assertNotNull(maybeAttachmentId)
@@ -36,9 +36,9 @@ class CordappProviderTests {
     @Test
     fun `empty jar is not loaded into the attachment store`() {
         val loader = CordappLoader.createDevMode(listOf(emptyJAR))
-        val provider = CordappProvider(attachmentStore, loader)
+        val provider = CordappProvider(loader)
 
-        provider.start()
+        provider.start(attachmentStore)
         
         Assert.assertNull(provider.getCordappAttachmentId(provider.cordapps.first()))
     }
@@ -46,7 +46,7 @@ class CordappProviderTests {
     @Test
     fun `test that we find a cordapp class that is loaded into the store`() {
         val loader = CordappLoader.createDevMode(listOf(isolatedJAR))
-        val provider = CordappProvider(attachmentStore, loader)
+        val provider = CordappProvider(loader)
         val className = "net.corda.finance.contracts.isolated.AnotherDummyContract"
 
         val expected = provider.cordapps.first()
@@ -59,10 +59,10 @@ class CordappProviderTests {
     @Test
     fun `test that we find an attachment for a cordapp contrat class`() {
         val loader = CordappLoader.createDevMode(listOf(isolatedJAR))
-        val provider = CordappProvider(attachmentStore, loader)
+        val provider = CordappProvider(loader)
         val className = "net.corda.finance.contracts.isolated.AnotherDummyContract"
 
-        provider.start()
+        provider.start(attachmentStore)
         val expected = provider.getAppContext(provider.cordapps.first()).attachmentId
         val actual = provider.getContractAttachmentID(className)
 

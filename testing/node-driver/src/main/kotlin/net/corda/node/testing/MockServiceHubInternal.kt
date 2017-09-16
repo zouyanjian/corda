@@ -49,7 +49,7 @@ open class MockServiceHubInternal(
         val schemas: SchemaService? = NodeSchemaService(),
         val customContractUpgradeService: ContractUpgradeService? = null,
         val customTransactionVerifierService: TransactionVerifierService? = InMemoryTransactionVerifierService(2),
-        override val cordappService: CordappService = CordappProvider(attachments, CordappLoader.createDefault(Paths.get(".")))
+        override val cordappService: CordappService = CordappProvider(CordappLoader.createDefault(Paths.get("."))).start(attachments)
 ) : ServiceHubInternal {
     override val vaultQueryService: VaultQueryService
         get() = customVaultQuery ?: throw UnsupportedOperationException()
