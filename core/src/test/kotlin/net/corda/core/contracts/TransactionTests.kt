@@ -35,7 +35,7 @@ class TransactionTests : TestDependencyInjectionBase() {
         val bk = generateKeyPair()
         val ck = generateKeyPair()
         val apub = ak.public
-        val bpub = bk.public    
+        val bpub = bk.public
         val cpub = ck.public
         val c1 = CompositeKey.Builder().addKeys(apub, bpub).build(2)
         val compKey = CompositeKey.Builder().addKeys(c1, cpub).build(1)
@@ -96,12 +96,11 @@ class TransactionTests : TestDependencyInjectionBase() {
 
     @Test
     fun `transactions with no inputs can have any notary`() {
-        val dummyContractAttachment = ContractAttachment(MockAttachment(SecureHash.zeroHash), DUMMY_PROGRAM_ID)
         val baseOutState = TransactionState(DummyContract.SingleOwnerState(0, ALICE), DUMMY_PROGRAM_ID, DUMMY_NOTARY)
         val inputs = emptyList<StateAndRef<*>>()
         val outputs = listOf(baseOutState, baseOutState.copy(notary = ALICE), baseOutState.copy(notary = BOB))
         val commands = emptyList<CommandWithParties<CommandData>>()
-        val attachments = listOf<Attachment>(dummyContractAttachment)
+        val attachments = listOf<Attachment>(ContractAttachment(MockAttachment(), DUMMY_PROGRAM_ID))
         val id = SecureHash.randomSHA256()
         val timeWindow: TimeWindow? = null
         val privacySalt: PrivacySalt = PrivacySalt()

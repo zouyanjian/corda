@@ -6,4 +6,4 @@ import net.corda.core.internal.AbstractAttachment
 /**
  * An attachment with only an ID and an empty data array
  */
-class MockAttachment(override val id: SecureHash) : AbstractAttachment({ ByteArray(0) })
+class MockAttachment(override val id: SecureHash = SecureHash.zeroHash) : AbstractAttachment({ ByteArray(0) })
