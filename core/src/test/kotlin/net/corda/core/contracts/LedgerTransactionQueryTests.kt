@@ -1,15 +1,16 @@
 package net.corda.core.contracts
 
+import net.corda.core.cordapp.CordappService
 import net.corda.core.identity.AbstractParty
 import net.corda.core.node.ServiceHub
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.TestDependencyInjectionBase
-import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.chooseIdentity
-import net.corda.testing.contracts.DummyContract
+import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.dummyCommand
+import net.corda.testing.node.MockCordappService
 import net.corda.testing.node.MockServices
 import org.junit.Before
 import org.junit.Test
@@ -24,7 +25,11 @@ class LedgerTransactionQueryTests : TestDependencyInjectionBase() {
 
     @Before
     fun setup() {
-        services = MockServices()
+        val mockCordappService = MockCordappService()
+        services = object : MockServices() {
+            override val cordappService: CordappService = mockCordappService
+        }
+        mockCordappService.addMockCordapp(DUMMY_PROGRAM_ID, services)
     }
 
     interface Commands {

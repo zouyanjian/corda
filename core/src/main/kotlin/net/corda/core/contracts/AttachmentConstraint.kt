@@ -20,3 +20,10 @@ data class HashAttachmentConstraint(val attachmentId: SecureHash) : AttachmentCo
     override fun isSatisfiedBy(attachment: Attachment) = attachment.id == attachmentId
 }
 
+/**
+ * An [AttachmentConstraint] that verifies by hash and any signers of the attachment - attachment and signer are
+ * automaticallt resolved when the transaction is built into a [LedgerTransaction]
+ */
+object AutomaticHashConstraint : AttachmentConstraint {
+    override fun isSatisfiedBy(attachment: Attachment): Boolean = false
+}

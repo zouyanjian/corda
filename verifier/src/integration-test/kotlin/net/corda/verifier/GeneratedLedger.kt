@@ -41,7 +41,8 @@ data class GeneratedLedger(
         return transaction.toLedgerTransaction(
                 resolveIdentity = { identityMap[it] },
                 resolveAttachment = { attachmentMap[it] },
-                resolveStateRef = { hashTransactionMap[it.txhash]?.outputs?.get(it.index) }
+                resolveStateRef = { hashTransactionMap[it.txhash]?.outputs?.get(it.index) },
+                resolveContractAttachment = { null } // TODO: Actually resolve the attachments
         )
     }
 

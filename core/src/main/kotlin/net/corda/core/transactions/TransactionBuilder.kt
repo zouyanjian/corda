@@ -101,14 +101,14 @@ open class TransactionBuilder(
     }
 
     @JvmOverloads
-    fun addOutputState(state: ContractState, contract: ContractClassName, notary: Party, encumbrance: Int? = null): TransactionBuilder {
-        return addOutputState(TransactionState(state, contract, notary, encumbrance))
+    fun addOutputState(state: ContractState, contract: ContractClassName, notary: Party, encumbrance: Int? = null, constraint: AttachmentConstraint = AutomaticHashConstraint): TransactionBuilder {
+        return addOutputState(TransactionState(state, contract, notary, encumbrance, constraint))
     }
 
     /** A default notary must be specified during builder construction to use this method */
-    fun addOutputState(state: ContractState, contract: ContractClassName): TransactionBuilder {
+    fun addOutputState(state: ContractState, contract: ContractClassName, constraint: AttachmentConstraint = AutomaticHashConstraint): TransactionBuilder {
         checkNotNull(notary) { "Need to specify a notary for the state, or set a default one on TransactionBuilder initialisation" }
-        addOutputState(state, contract, notary!!)
+        addOutputState(state, contract, notary!!, constraint = constraint)
         return this
     }
 

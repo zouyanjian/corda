@@ -49,5 +49,5 @@ data class TransactionState<out T : ContractState> @JvmOverloads constructor(
         /**
          * A validator for the contract attachments on the transaction.
          */
-        val constraint: AttachmentConstraint = AlwaysAcceptAttachmentConstraint)
+        val constraint: AttachmentConstraint = AutomaticHashConstraint)
 // DOCEND 1
