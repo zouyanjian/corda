@@ -3,6 +3,7 @@ package net.corda.node.internal.cordapp
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult
 import net.corda.core.contracts.Contract
+import net.corda.core.contracts.UpgradedContract
 import net.corda.core.flows.ContractUpgradeFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatedBy
@@ -72,20 +73,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
                         if (path.protocol == "jar") {
                             (path.openConnection() as JarURLConnection).jarFileURL.toURI()
                         } else {
-                            val cordappJAR = File("build/tmp/generated-test-cordapps/$scanPackage.jar")
-                            FileOutputStream(cordappJAR).use {
-                                JarOutputStream(it).use { jos ->
-                                    val scanDir = File(path.toURI())
-                                    scanDir.walkTopDown().forEach {
-                                        jos.putNextEntry(ZipEntry(resource + "/" + scanDir.toPath().relativize(it.toPath()).toString()))
-                                        if (it.isFile) {
-                                            Files.copy(it.toPath(), jos)
-                                        }
-                                        jos.closeEntry()
-                                    }
-                                }
-                            }
-                            cordappJAR.toURI()
+                            createDevCordappJar(scanPackage, path, resource)
                         }.toURL()
                     }
                     .toList()
@@ -99,6 +87,26 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
          */
         @VisibleForTesting
         fun createDevMode(scanJars: List<URL>) = CordappLoader(scanJars)
+
+        private fun createDevCordappJar(scanPackage: String, path: URL, jarPackageName: String): URI {
+            val cordappDir = File("build/tmp/generated-test-cordapps")
+            cordappDir.mkdirs()
+            val cordappJAR = File(cordappDir, "$scanPackage.jar")
+            logger.info("Generating a test-only cordapp of classes discovered in $scanPackage at $cordappJAR")
+            FileOutputStream(cordappJAR).use {
+                JarOutputStream(it).use { jos ->
+                    val scanDir = File(path.toURI())
+                    scanDir.walkTopDown().forEach {
+                        jos.putNextEntry(ZipEntry(jarPackageName + "/" + scanDir.toPath().relativize(it.toPath()).toString()))
+                        if (it.isFile) {
+                            Files.copy(it.toPath(), jos)
+                        }
+                        jos.closeEntry()
+                    }
+                }
+            }
+            return cordappJAR.toURI()
+        }
     }
 
     private fun loadCordapps(): List<Cordapp> {
@@ -144,7 +152,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
     }
 
     private fun findContractClassNames(scanResult: ScanResult): List<String> {
-        return scanResult.getNamesOfClassesImplementing(Contract::class.java)
+        return (scanResult.getNamesOfClassesImplementing(Contract::class.java) + scanResult.getNamesOfClassesImplementing(UpgradedContract::class.java)).distinct()
     }
 
     private fun findPlugins(cordappJarPath: URL): List<CordaPluginRegistry> {

@@ -76,9 +76,7 @@ data class LedgerTransaction(
     private fun verifyConstraints() {
         (inputs.map { it.state } + outputs).forEach { state ->
             val contractAttachment = attachments.filter { it is ContractAttachment }.map { it as ContractAttachment }.find { it.contract == state.contract }
-            if (contractAttachment == null) {
-                throw TransactionVerificationException.MissingAttachmentRejection(id, state.contract)
-            }
+                    ?: throw TransactionVerificationException.MissingAttachmentRejection(id, state.contract)
 
             if(!state.constraint.isSatisfiedBy(contractAttachment)) {
                 throw TransactionVerificationException.ContractConstraintRejection(id, state.contract)

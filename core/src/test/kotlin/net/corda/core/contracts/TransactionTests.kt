@@ -96,7 +96,7 @@ class TransactionTests : TestDependencyInjectionBase() {
 
     @Test
     fun `transactions with no inputs can have any notary`() {
-        val baseOutState = TransactionState(DummyContract.SingleOwnerState(0, ALICE), DUMMY_PROGRAM_ID, DUMMY_NOTARY)
+        val baseOutState = TransactionState(DummyContract.SingleOwnerState(0, ALICE), DUMMY_PROGRAM_ID, DUMMY_NOTARY, constraint = AlwaysAcceptAttachmentConstraint)
         val inputs = emptyList<StateAndRef<*>>()
         val outputs = listOf(baseOutState, baseOutState.copy(notary = ALICE), baseOutState.copy(notary = BOB))
         val commands = emptyList<CommandWithParties<CommandData>>()

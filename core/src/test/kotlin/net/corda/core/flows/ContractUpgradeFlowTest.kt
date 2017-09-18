@@ -21,14 +21,10 @@ import net.corda.node.internal.CordaRPCOpsImpl
 import net.corda.node.internal.StartedNode
 import net.corda.node.services.FlowPermissions.Companion.startFlowPermission
 import net.corda.nodeapi.User
-import net.corda.testing.RPCDriverExposedDSLInterface
-import net.corda.testing.chooseIdentity
+import net.corda.testing.*
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyContractV2
 import net.corda.testing.node.MockNetwork
-import net.corda.testing.rpcDriver
-import net.corda.testing.rpcTestUser
-import net.corda.testing.startRpcClient
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -45,6 +41,7 @@ class ContractUpgradeFlowTest {
 
     @Before
     fun setup() {
+        setCordappPackage("net.corda.testing.contracts")
         mockNet = MockNetwork()
         val nodes = mockNet.createSomeNodes(notaryKeyPair = null) // prevent generation of notary override
         a = nodes.partyNodes[0]
@@ -69,6 +66,7 @@ class ContractUpgradeFlowTest {
     @After
     fun tearDown() {
         mockNet.stopNodes()
+        unsetCordappPackage()
     }
 
     @Test
