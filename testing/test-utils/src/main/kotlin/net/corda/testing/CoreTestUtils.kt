@@ -160,3 +160,14 @@ inline fun <reified T : Any> amqpSpecific(reason: String, function: () -> Unit) 
  */
 fun NodeInfo.chooseIdentityAndCert(): PartyAndCertificate = legalIdentitiesAndCerts.first()
 fun NodeInfo.chooseIdentity(): Party = legalIdentitiesAndCerts.first().party
+
+/**
+ * Set the package to scan for cordapps - this overrides the default behaviour of scanning the cordapps directory
+ * @param packageName A package name that you wish to scan for cordapps
+ */
+fun setCordappPackage(packageName: String) = System.setProperty("net.corda.node.cordapp.scan.package", packageName)
+
+/**
+ * Unsets the default overriding behaviour of [setCordappPackage]
+ */
+fun unsetCordappPackage() = System.clearProperty("net.corda.node.cordapp.scan.package")

@@ -32,13 +32,13 @@ class PartialMerkleTreeTest : TestDependencyInjectionBase() {
 
     val testLedger = ledger {
         unverifiedTransaction {
-            output(CASH_PROGRAM_ID, "MEGA_CORP cash") {
+            unconstrainedOutput(CASH_PROGRAM_ID, "MEGA_CORP cash") {
                 Cash.State(
                         amount = 1000.DOLLARS `issued by` MEGA_CORP.ref(1, 1),
                         owner = MEGA_CORP
                 )
             }
-            output(CASH_PROGRAM_ID, "dummy cash 1") {
+            unconstrainedOutput(CASH_PROGRAM_ID, "dummy cash 1") {
                 Cash.State(
                         amount = 900.DOLLARS `issued by` MEGA_CORP.ref(1, 1),
                         owner = MINI_CORP
@@ -47,6 +47,7 @@ class PartialMerkleTreeTest : TestDependencyInjectionBase() {
         }
 
         transaction {
+            attachments(CASH_PROGRAM_ID)
             input("MEGA_CORP cash")
             output(CASH_PROGRAM_ID, "MEGA_CORP cash".output<Cash.State>().copy(owner = MINI_CORP))
             command(MEGA_CORP_PUBKEY) { Cash.Commands.Move() }

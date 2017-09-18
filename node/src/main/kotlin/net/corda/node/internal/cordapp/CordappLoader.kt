@@ -15,13 +15,19 @@ import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.utilities.loggerFor
 import net.corda.core.cordapp.Cordapp
 import net.corda.node.internal.classloading.requireAnnotation
+import java.io.File
+import java.io.FileOutputStream
 import java.lang.reflect.Modifier
 import java.net.JarURLConnection
 import java.net.URI
 import java.net.URL
 import java.net.URLClassLoader
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
+import java.util.jar.JarOutputStream
+import java.util.zip.ZipEntry
 import kotlin.reflect.KClass
 import kotlin.streams.toList
 
@@ -62,13 +68,25 @@ class CordappLoader private constructor(private val cordappJarPaths: List<URL>) 
             val resource = scanPackage.replace('.', '/')
             val paths = this::class.java.classLoader.getResources(resource)
                     .asSequence()
-                    .map {
-                        val uri = if (it.protocol == "jar") {
-                            (it.openConnection() as JarURLConnection).jarFileURL.toURI()
+                    .map { path ->
+                        if (path.protocol == "jar") {
+                            (path.openConnection() as JarURLConnection).jarFileURL.toURI()
                         } else {
-                            URI(it.toExternalForm().removeSuffix(resource))
-                        }
-                        uri.toURL()
+                            val cordappJAR = File("build/tmp/generated-test-cordapps/$scanPackage.jar")
+                            FileOutputStream(cordappJAR).use {
+                                JarOutputStream(it).use { jos ->
+                                    val scanDir = File(path.toURI())
+                                    scanDir.walkTopDown().forEach {
+                                        jos.putNextEntry(ZipEntry(resource + "/" + scanDir.toPath().relativize(it.toPath()).toString()))
+                                        if (it.isFile) {
+                                            Files.copy(it.toPath(), jos)
+                                        }
+                                        jos.closeEntry()
+                                    }
+                                }
+                            }
+                            cordappJAR.toURI()
+                        }.toURL()
                     }
                     .toList()
             return CordappLoader(paths)
