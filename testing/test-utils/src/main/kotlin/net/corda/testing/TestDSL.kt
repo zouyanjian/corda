@@ -1,6 +1,7 @@
 package net.corda.testing
 
 import net.corda.core.contracts.*
+import net.corda.core.cordapp.CordappService
 import net.corda.core.crypto.*
 import net.corda.core.crypto.NullKeys.NULL_SIGNATURE
 import net.corda.core.crypto.CompositeKey
@@ -11,6 +12,7 @@ import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.transactions.WireTransaction
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.contracts.DummyContract
+import net.corda.testing.node.MockCordappService
 import java.io.InputStream
 import java.security.KeyPair
 import java.security.PublicKey
@@ -70,8 +72,10 @@ data class TestTransactionDSLInterpreter private constructor(
             transactionBuilder: TransactionBuilder
     ) : this(ledgerInterpreter, transactionBuilder, HashMap())
 
+    val mockCordappService = MockCordappService()
     val services = object : ServiceHub by ledgerInterpreter.services {
         override fun loadState(stateRef: StateRef) = ledgerInterpreter.resolveStateRef<ContractState>(stateRef)
+        override val cordappService: CordappService = mockCordappService
     }
 
     private fun copy(): TestTransactionDSLInterpreter =
@@ -88,8 +92,14 @@ data class TestTransactionDSLInterpreter private constructor(
         transactionBuilder.addInputState(StateAndRef(state, stateRef))
     }
 
-    override fun _output(contractClassName: ContractClassName, label: String?, notary: Party, encumbrance: Int?, contractState: ContractState) {
-        transactionBuilder.addOutputState(contractState, contractClassName, notary, encumbrance)
+    override fun _output(contractClassName: ContractClassName,
+                         label: String?,
+                         notary: Party,
+                         encumbrance: Int?,
+                         attachmentConstraint: AttachmentConstraint,
+                         contractState: ContractState
+    ) {
+        transactionBuilder.addOutputState(contractState, contractClassName, notary, encumbrance, attachmentConstraint)
         if (label != null) {
             if (label in labelToIndexMap) {
                 throw DuplicateOutputLabel(label)
@@ -125,6 +135,10 @@ data class TestTransactionDSLInterpreter private constructor(
     override fun tweak(
             dsl: TransactionDSL<TransactionDSLInterpreter>.() -> EnforceVerifyOrFail
     ) = dsl(TransactionDSL(copy()))
+
+    override fun _attachment(contractClassName: ContractClassName) {
+        mockCordappService.addMockCordapp(contractClassName, services)
+    }
 }
 
 data class TestLedgerDSLInterpreter private constructor(
