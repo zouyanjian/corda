@@ -5,13 +5,16 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.node.services.AttachmentId
 
 /**
- * Cordapp services are to allow access to necessary meta information about the cordapp to allow for attachment loading
- * configuration of cordapps, etc
+ * Provides access to what the node knows about loded applications.
  */
 interface CordappService {
     /**
      * Exposes the current CorDapp context which will contain information and configuration of the CorDapp that
      * is currently running.
+     *
+     * The context is found via stack walking and finding the first class on the stack that matches any class contained
+     * within the automatically resolved [Cordapp]s loaded by the [CordappLoader]
+     *
      * @throws IllegalStateException When called from a non-app context
      */
     fun getAppContext(): CordappContext

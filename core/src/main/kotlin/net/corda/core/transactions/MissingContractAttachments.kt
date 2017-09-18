@@ -5,5 +5,8 @@ import net.corda.core.contracts.TransactionState
 
 /**
  * A contract attachment was missing when trying to automatically attach all known contract attachments
+ *
+ * @property states States which have contracts that do not have corresponding attachments in the attachment store.
  */
-class MissingContractAttachments(val states: List<TransactionState<ContractState>>) : Exception()
+class MissingContractAttachments(val states: List<TransactionState<ContractState>>)
+    : Exception("Cannot find contract attachments for ${states.map { it.contract }.distinct() }")

@@ -15,6 +15,7 @@ import java.net.URLClassLoader
  */
 class CordappProvider(private val cordappLoader: CordappLoader) : CordappService {
     override fun getAppContext(): CordappContext {
+        // TODO: Use better supported APIs in Java 9
         Exception().stackTrace.forEach { stackFrame ->
             val cordapp = getCordappForClass(stackFrame.className)
             if(cordapp != null) {
@@ -73,9 +74,5 @@ class CordappProvider(private val cordappLoader: CordappLoader) : CordappService
      * @param className The class name
      * @return cordapp A cordapp or null if no cordapp has the given class loaded
      */
-    fun getCordappForClass(className: String): Cordapp? {
-        return cordapps.find {
-            ((it.rpcFlows + it.initiatedFlows + it.services + it.plugins.map { it.javaClass }).map { it.name } + it.contractClassNames).contains(className)
-        }
-    }
+    fun getCordappForClass(className: String): Cordapp? = cordapps.find { it.cordappClasses.contains(className) }
 }
