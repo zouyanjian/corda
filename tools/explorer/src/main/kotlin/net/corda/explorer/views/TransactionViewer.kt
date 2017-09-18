@@ -26,7 +26,6 @@ import net.corda.core.crypto.toStringShort
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.node.NodeInfo
 import net.corda.core.utilities.toBase58String
 import net.corda.explorer.AmountDiff
 import net.corda.explorer.formatters.AmountFormatter
@@ -206,7 +205,7 @@ class TransactionViewer : CordaView("Transactions") {
     }
 
     private fun ObservableList<StateAndRef<ContractState>>.getParties() = map { it.state.data.participants.map { it.owningKey.toKnownParty() } }
-    private fun ObservableList<StateAndRef<ContractState>>.toText() = map { it.contract() }.groupBy { it }.map { "${it.key} (${it.value.size})" }.joinToString()
+    private fun ObservableList<StateAndRef<ContractState>>.toText() = map { it.contract() }.groupBy { it }.map { "${it.key.split(".").last()} (${it.value.size})" }.joinToString()
 
     private class TransactionWidget : BorderPane() {
         private val partiallyResolvedTransactions by observableListReadOnly(TransactionDataModel::partiallyResolvedTransactions)
@@ -310,15 +309,13 @@ private fun calculateTotalEquiv(myIdentity: Party?,
                                 inputs: List<ContractState>,
                                 outputs: List<ContractState>): AmountDiff<Currency> {
     val (reportingCurrency, exchange) = reportingCurrencyExchange
-    fun List<ContractState>.sum() = this.map { it as? Cash.State }
-            .filterNotNull()
+    fun List<ContractState>.sum() = this.mapNotNull { it as? Cash.State }
             .filter { it.owner.owningKey.toKnownParty().value == myIdentity }
             .map { exchange(it.amount.withoutIssuer()).quantity }
             .sum()
 
     // For issuing cash, if I am the issuer and not the owner (e.g. issuing cash to other party), count it as negative.
-    val issuedAmount = if (inputs.isEmpty()) outputs.map { it as? Cash.State }
-            .filterNotNull()
+    val issuedAmount = if (inputs.isEmpty()) outputs.mapNotNull { it as? Cash.State }
             .filter { it.amount.token.issuer.party.owningKey.toKnownParty().value == myIdentity && it.owner.owningKey.toKnownParty().value != myIdentity }
             .map { exchange(it.amount.withoutIssuer()).quantity }
             .sum() else 0
