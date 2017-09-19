@@ -152,7 +152,7 @@ interface ServiceHub : ServicesForResolution {
 
     // Helper method to construct an initial partially signed transaction from a [TransactionBuilder].
     private fun signInitialTransaction(builder: TransactionBuilder, publicKey: PublicKey, signatureMetadata: SignatureMetadata): SignedTransaction {
-        return builder.toSignedTransaction(keyManagementService, publicKey, signatureMetadata)
+        return builder.toSignedTransaction(keyManagementService, publicKey, signatureMetadata, this)
     }
 
     /**

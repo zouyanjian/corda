@@ -1,12 +1,14 @@
 package net.corda.client.jackson
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.nhaarman.mockito_kotlin.mock
 import net.corda.core.contracts.Amount
 import net.corda.finance.USD
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SignatureMetadata
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.crypto.generateKeyPair
+import net.corda.core.node.ServicesForResolution
 import net.corda.core.transactions.SignedTransaction
 import net.corda.testing.ALICE_PUBKEY
 import net.corda.testing.DUMMY_NOTARY
@@ -58,7 +60,7 @@ class JacksonSupportTest : TestDependencyInjectionBase() {
     @Test
     fun writeTransaction() {
         fun makeDummyTx(): SignedTransaction {
-            val wtx = DummyContract.generateInitial(1, DUMMY_NOTARY, MINI_CORP.ref(1)).toWireTransaction()
+            val wtx = DummyContract.generateInitial(1, DUMMY_NOTARY, MINI_CORP.ref(1)).toWireTransaction(mock<ServicesForResolution>())
             val signatures = TransactionSignature(
                     ByteArray(1),
                     ALICE_PUBKEY,

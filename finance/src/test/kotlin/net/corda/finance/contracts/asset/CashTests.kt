@@ -156,7 +156,7 @@ class CashTests : TestDependencyInjectionBase() {
         // Test generation works.
         val tx: WireTransaction = TransactionBuilder(notary = null).apply {
             Cash().generateIssue(this, 100.DOLLARS `issued by` MINI_CORP.ref(12, 34), owner = AnonymousParty(ALICE_PUBKEY), notary = DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertTrue(tx.inputs.isEmpty())
         val s = tx.outputsOfType<Cash.State>().single()
         assertEquals(100.DOLLARS `issued by` MINI_CORP.ref(12, 34), s.amount)
@@ -173,7 +173,7 @@ class CashTests : TestDependencyInjectionBase() {
         val amount = 100.DOLLARS `issued by` MINI_CORP.ref(12, 34)
         val tx: WireTransaction = TransactionBuilder(notary = null).apply {
             Cash().generateIssue(this, amount, owner = AnonymousParty(ALICE_PUBKEY), notary = DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertTrue(tx.inputs.isEmpty())
         assertEquals(tx.outputs[0], tx.outputs[0])
     }
@@ -477,7 +477,7 @@ class CashTests : TestDependencyInjectionBase() {
     private fun makeExit(amount: Amount<Currency>, corp: Party, depositRef: Byte = 1): WireTransaction {
         val tx = TransactionBuilder(DUMMY_NOTARY)
         Cash().generateExit(tx, Amount(amount.quantity, Issued(corp.ref(depositRef), amount.token)), WALLET)
-        return tx.toWireTransaction()
+        return tx.toWireTransaction(miniCorpServices)
     }
 
     private fun makeSpend(amount: Amount<Currency>, dest: AbstractParty): WireTransaction {
@@ -485,7 +485,7 @@ class CashTests : TestDependencyInjectionBase() {
         database.transaction {
             Cash.generateSpend(miniCorpServices, tx, amount, dest)
         }
-        return tx.toWireTransaction()
+        return tx.toWireTransaction(miniCorpServices)
     }
 
     /**
@@ -794,7 +794,7 @@ class CashTests : TestDependencyInjectionBase() {
             )
             Cash.generateSpend(miniCorpServices, tx, payments)
         }
-        val wtx = tx.toWireTransaction()
+        val wtx = tx.toWireTransaction(miniCorpServices)
         fun out(i: Int) = wtx.getOutput(i) as Cash.State
         assertEquals(4, wtx.outputs.size)
         assertEquals(80.DOLLARS, out(0).amount.withoutIssuer())

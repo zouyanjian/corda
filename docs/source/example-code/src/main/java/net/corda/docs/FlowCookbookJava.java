@@ -331,7 +331,7 @@ public class FlowCookbookJava {
             // We can also add items using methods for the individual components:
             // DOCSTART 28
             txBuilder.addInputState(ourStateAndRef);
-            txBuilder.addOutputState(ourOutput, DummyContractKt.getDUMMY_PROGRAM_ID());
+            txBuilder.addOutputState(ourOutput, DummyContractKt.getDUMMY_PROGRAM_ID(), AutomaticHashConstraint.INSTANCE);
             txBuilder.addCommand(ourCommand);
             txBuilder.addAttachment(ourAttachment);
             // DOCEND 28

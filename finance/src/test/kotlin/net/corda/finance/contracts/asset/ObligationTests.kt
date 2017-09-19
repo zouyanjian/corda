@@ -139,7 +139,7 @@ class ObligationTests {
         val tx = TransactionBuilder(notary = null).apply {
             Obligation<Currency>().generateIssue(this, MINI_CORP, megaCorpDollarSettlement, 100.DOLLARS.quantity,
                     beneficiary = CHARLIE, notary = DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertTrue(tx.inputs.isEmpty())
         val expected = Obligation.State(
                 obligor = MINI_CORP,
@@ -210,7 +210,7 @@ class ObligationTests {
         val tx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generateIssue(this, MINI_CORP, megaCorpDollarSettlement, 100.DOLLARS.quantity,
                     beneficiary = MINI_CORP, notary = DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
 
 
         // Include the previously issued obligation in a new issuance command
@@ -228,7 +228,7 @@ class ObligationTests {
         val obligationBobToAlice = getStateAndRef(oneMillionDollars.OBLIGATION between Pair(BOB, ALICE), OBLIGATION_PROGRAM_ID)
         val tx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generateCloseOutNetting(this, ALICE, obligationAliceToBob, obligationBobToAlice)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertEquals(0, tx.outputs.size)
     }
 
@@ -240,7 +240,7 @@ class ObligationTests {
         val obligationBobToAlice = getStateAndRef(oneMillionDollars.OBLIGATION between Pair(BOB, ALICE), OBLIGATION_PROGRAM_ID)
         val tx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generateCloseOutNetting(this, ALICE, obligationAliceToBob, obligationBobToAlice)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertEquals(1, tx.outputs.size)
 
         val actual = tx.getOutput(0)
@@ -255,7 +255,7 @@ class ObligationTests {
         val obligationBobToAlice = getStateAndRef(oneMillionDollars.OBLIGATION between Pair(BOB, ALICE), OBLIGATION_PROGRAM_ID)
         val tx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generatePaymentNetting(this, obligationAliceToBob.state.data.amount.token, DUMMY_NOTARY, obligationAliceToBob, obligationBobToAlice)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertEquals(0, tx.outputs.size)
     }
 
@@ -269,7 +269,7 @@ class ObligationTests {
         val obligationBobToAliceState = obligationBobToAlice.state.data
         val tx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generatePaymentNetting(this, obligationAliceToBobState.amount.token, DUMMY_NOTARY, obligationAliceToBob, obligationBobToAlice)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertEquals(1, tx.outputs.size)
         val expected = obligationBobToAliceState.copy(quantity = obligationBobToAliceState.quantity - obligationAliceToBobState.quantity)
         val actual = tx.getOutput(0)
@@ -327,18 +327,18 @@ class ObligationTests {
         initialiseTestSerialization()
         val cashTx = TransactionBuilder(null).apply {
             Cash().generateIssue(this, 100.DOLLARS `issued by` defaultIssuer, MINI_CORP, DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
 
         // Generate a transaction issuing the obligation
         val obligationTx = TransactionBuilder(null).apply {
             Obligation<Currency>().generateIssue(this, MINI_CORP, megaCorpDollarSettlement, 100.DOLLARS.quantity,
                     beneficiary = MINI_CORP, notary = DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
 
         // Now generate a transaction settling the obligation
         val settleTx = TransactionBuilder(DUMMY_NOTARY).apply {
             Obligation<Currency>().generateSettle(this, listOf(obligationTx.outRef(0)), listOf(cashTx.outRef(0)), Cash.Commands.Move(), DUMMY_NOTARY)
-        }.toWireTransaction()
+        }.toWireTransaction(miniCorpServices)
         assertEquals(2, settleTx.inputs.size)
         assertEquals(1, settleTx.outputs.size)
     }

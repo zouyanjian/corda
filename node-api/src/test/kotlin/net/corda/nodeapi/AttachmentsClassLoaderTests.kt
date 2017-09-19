@@ -8,6 +8,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.declaredField
 import net.corda.core.node.ServiceHub
+import net.corda.core.node.ServicesForResolution
 import net.corda.core.node.services.AttachmentStorage
 import net.corda.core.serialization.*
 import net.corda.core.transactions.LedgerTransaction
@@ -296,7 +297,7 @@ class AttachmentsClassLoaderTests : TestDependencyInjectionBase() {
     @Test
     fun `test serialization of WireTransaction with statically loaded contract`() {
         val tx = AttachmentDummyContract().generateInitial(MEGA_CORP.ref(0), 42, DUMMY_NOTARY)
-        val wireTransaction = tx.toWireTransaction()
+        val wireTransaction = tx.toWireTransaction(mock<ServiceHub>())
         val bytes = wireTransaction.serialize()
         val copiedWireTransaction = bytes.deserialize()
 
@@ -320,7 +321,7 @@ class AttachmentsClassLoaderTests : TestDependencyInjectionBase() {
         val bytes = run {
             val attachmentRef = importJar(storage)
             tx.addAttachment(storage.openAttachment(attachmentRef)!!.id)
-            val wireTransaction = tx.toWireTransaction()
+            val wireTransaction = tx.toWireTransaction(mock<ServiceHub>())
             wireTransaction.serialize(context = context)
         }
         val copiedWireTransaction = bytes.deserialize(context = context)
@@ -347,7 +348,7 @@ class AttachmentsClassLoaderTests : TestDependencyInjectionBase() {
 
                 tx.addAttachment(storage.openAttachment(attachmentRef)!!.id)
 
-                val wireTransaction = tx.toWireTransaction()
+                val wireTransaction = tx.toWireTransaction(mock<ServiceHub>())
 
                 wireTransaction.serialize(context = SerializationFactory.defaultFactory.defaultContext.withAttachmentStorage(storage))
             }

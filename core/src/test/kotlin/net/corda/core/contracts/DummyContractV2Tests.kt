@@ -1,8 +1,10 @@
 package net.corda.core.contracts
 
+import com.nhaarman.mockito_kotlin.mock
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyContractV2
 import net.corda.core.crypto.SecureHash
+import net.corda.core.node.ServicesForResolution
 import net.corda.testing.ALICE
 import net.corda.testing.DUMMY_NOTARY
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
@@ -21,7 +23,7 @@ class DummyContractV2Tests {
         val v1State = TransactionState(DummyContract.SingleOwnerState(0, ALICE), DUMMY_PROGRAM_ID, DUMMY_NOTARY)
         val v1Ref = StateRef(SecureHash.randomSHA256(), 0)
         val v1StateAndRef = StateAndRef(v1State, v1Ref)
-        val (tx, _) = DummyContractV2().generateUpgradeFromV1(v1StateAndRef)
+        val (tx, _) = DummyContractV2().generateUpgradeFromV1(mock<ServicesForResolution>(), v1StateAndRef)
 
         assertEquals(v1Ref, tx.inputs.single())
 

@@ -92,17 +92,10 @@ data class WireTransaction(
         val resolvedInputs = inputs.map { ref ->
             resolveStateRef(ref)?.let { StateAndRef(it, ref) } ?: throw TransactionResolutionException(ref.txhash)
         }
-        val resolvedOutputs = outputs.map { state ->
-            if (state.constraint is AutomaticHashConstraint) {
-                resolveContractAttachment(state)?.let { state.copy(constraint = HashAttachmentConstraint(it)) } ?: state
-            } else {
-                state
-            }
-        }
         // Open attachments specified in this transaction. If we haven't downloaded them, we fail.
         val contractAttachments = findAttachmentContracts(resolvedInputs, resolveContractAttachment, resolveAttachment)
         val attachments = contractAttachments + (attachments.map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }).distinct()
-        return LedgerTransaction(resolvedInputs, resolvedOutputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt)
+        return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt)
     }
 
     /**

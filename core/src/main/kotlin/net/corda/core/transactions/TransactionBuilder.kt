@@ -6,6 +6,8 @@ import net.corda.core.crypto.*
 import net.corda.core.identity.Party
 import net.corda.core.internal.FlowStateMachine
 import net.corda.core.node.ServiceHub
+import net.corda.core.node.ServicesForResolution
+import net.corda.core.node.services.AttachmentId
 import net.corda.core.node.services.KeyManagementService
 import java.lang.UnsupportedOperationException
 import java.security.KeyPair
@@ -72,11 +74,22 @@ open class TransactionBuilder(
     }
     // DOCEND 1
 
-    fun toWireTransaction() = WireTransaction(ArrayList(inputs), ArrayList(attachments),
-            ArrayList(outputs), ArrayList(commands), notary, window, privacySalt)
+    fun toWireTransaction(services: ServicesForResolution): WireTransaction {
+        val resolvedOutputs = outputs.map { state ->
+            if (state.constraint is AutomaticHashConstraint) {
+                services.cordappService.getContractAttachmentID(state.contract)?.let {
+                    state.copy(constraint = HashAttachmentConstraint(it))
+                } ?: state
+            } else {
+                state
+            }
+        }
+        return WireTransaction(ArrayList(inputs), ArrayList(attachments),
+                ArrayList(resolvedOutputs), ArrayList(commands), notary, window, privacySalt)
+    }
 
     @Throws(AttachmentResolutionException::class, TransactionResolutionException::class)
-    fun toLedgerTransaction(services: ServiceHub) = toWireTransaction().toLedgerTransaction(services)
+    fun toLedgerTransaction(services: ServiceHub) = toWireTransaction(services).toLedgerTransaction(services)
 
     @Throws(AttachmentResolutionException::class, TransactionResolutionException::class, TransactionVerificationException::class)
     fun verify(services: ServiceHub) {
@@ -155,8 +168,8 @@ open class TransactionBuilder(
      * Sign the built transaction and return it. This is an internal function for use by the service hub, please use
      * [ServiceHub.signInitialTransaction] instead.
      */
-    fun toSignedTransaction(keyManagementService: KeyManagementService, publicKey: PublicKey, signatureMetadata: SignatureMetadata): SignedTransaction {
-        val wtx = toWireTransaction()
+    fun toSignedTransaction(keyManagementService: KeyManagementService, publicKey: PublicKey, signatureMetadata: SignatureMetadata, services: ServicesForResolution): SignedTransaction {
+        val wtx = toWireTransaction(services)
         val signableData = SignableData(wtx.id, signatureMetadata)
         val sig = keyManagementService.sign(signableData, publicKey)
         return SignedTransaction(wtx, listOf(sig))

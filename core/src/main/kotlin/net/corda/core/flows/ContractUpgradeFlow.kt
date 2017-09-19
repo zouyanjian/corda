@@ -3,6 +3,7 @@ package net.corda.core.flows
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.*
 import net.corda.core.identity.Party
+import net.corda.core.node.ServicesForResolution
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -131,7 +132,7 @@ object ContractUpgradeFlow {
             val authorisedUpgrade = serviceHub.contractUpgradeService.getAuthorisedContractUpgrade(oldStateAndRef.ref) ?:
                     throw IllegalStateException("Contract state upgrade is unauthorised. State hash : ${oldStateAndRef.ref}")
             val proposedTx = stx.tx
-            val expectedTx = ContractUpgradeFlow.Initiator.assembleBareTx(oldStateAndRef, proposal.modification, proposedTx.privacySalt).toWireTransaction()
+            val expectedTx = ContractUpgradeFlow.Initiator.assembleBareTx(oldStateAndRef, proposal.modification, proposedTx.privacySalt).toWireTransaction(serviceHub)
             requireThat {
                 "The instigator is one of the participants" using (otherSide in oldStateAndRef.state.data.participants)
                 "The proposed upgrade ${proposal.modification.javaClass} is a trusted upgrade path" using (proposal.modification.name == authorisedUpgrade)
