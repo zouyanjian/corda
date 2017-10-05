@@ -6,6 +6,9 @@ from the previous milestone release.
 
 UNRELEASED
 ----------
+* ``FlowLogic`` now exposes a series of function called ``receiveAll(...)`` allowing to join ``receive(...)`` instructions.
+
+* Kotlin primitives can now be sent and received as part of flows.
 
 * ``Cordform`` and node identity generation
   * Cordform may not specify a value for ``NetworkMap``, when that happens, during the task execution the following happens:
