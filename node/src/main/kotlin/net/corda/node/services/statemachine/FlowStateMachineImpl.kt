@@ -176,8 +176,8 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
                             "@${InitiatingFlow::class.java.simpleName} sub-flow."
             )
         }
-        createNewSession(otherParty, sessionFlow)
         val flowSession = FlowSessionImpl(otherParty)
+        createNewSession(otherParty, flowSession, sessionFlow)
         flowSession.stateMachine = this
         flowSession.sessionFlow = sessionFlow
         return flowSession
@@ -298,15 +298,19 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
 
     @Suspendable
     override fun receiveAll(mappings: Map<FlowSession, Class<out Any>>, sessionFlow: FlowLogic<*>): Map<FlowSession, UntrustworthyData<Any>> {
-        val bySession = HashSet(mappings.keys).map { it -> it to getConfirmedSession(it.counterparty, sessionFlow) }.toMap(LinkedHashMap())
-        val byInternal = HashSet(bySession.entries).associateTo(LinkedHashMap()) { (session, sessionInternal) -> sessionInternal to session }
-        val requests = mappings.mapKeysTo(LinkedHashMap()) { (session, _) -> bySession[session]!! }.map { (session, type) -> ReceiveOnly(session, SessionData::class.java, type) }
-        val received: Map<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<*>>> = ReceiveAll(requests).suspendAndExpectReceive(suspend)
-        return received.confirmReceivedTypes().checkPayloadIds().mapKeysTo(LinkedHashMap()) { (internal, _) -> byInternal[internal]!! }
+        val requests = ArrayList<ReceiveOnly<SessionData>>()
+        for ((session, receiveType) in mappings) {
+            val sessionInternal = getConfirmedSession(session.counterparty, sessionFlow)
+            requests.add(ReceiveOnly(sessionInternal, SessionData::class.java, receiveType))
+        }
+        val receivedMessages = ReceiveAll(requests).suspendAndExpectReceive(suspend)
+        val result = HashMap<FlowSession, UntrustworthyData<Any>>()
+        for ((sessionInternal, requestAndMessage) in receivedMessages) {
+            val message = requestAndMessage.second.confirmReceiveType(requestAndMessage.first)
+            result[sessionInternal.flowSession] = message.checkPayloadIs(requestAndMessage.first.userReceiveType as Class<out Any>)
+        }
+        return result
     }
-
-    private fun Map<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<*>>>.confirmReceivedTypes() = mapValuesTo(LinkedHashMap()) { (_, pair) -> pair.first to pair.second.confirmReceiveType(pair.first) }
-    private fun LinkedHashMap<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<SessionData>>>.checkPayloadIds() = mapValuesTo(LinkedHashMap()) { (_, pair) -> pair.second.checkPayloadIs(pair.first.userReceiveType as Class<out Any>) }
 
     /**
      * This method will suspend the state machine and wait for incoming session init response from other party.
@@ -371,10 +375,11 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
 
     private fun createNewSession(
             otherParty: Party,
+            flowSession: FlowSession,
             sessionFlow: FlowLogic<*>
     ) {
         logger.trace { "Creating a new session with $otherParty" }
-        val session = FlowSessionInternal(sessionFlow, random63BitValue(), null, FlowSessionState.Uninitiated(otherParty))
+        val session = FlowSessionInternal(sessionFlow, flowSession, random63BitValue(), null, FlowSessionState.Uninitiated(otherParty))
         openSessions[Pair(sessionFlow, otherParty)] = session
     }
 

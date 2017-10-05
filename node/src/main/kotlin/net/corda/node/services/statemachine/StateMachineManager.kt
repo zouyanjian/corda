@@ -365,6 +365,7 @@ class StateMachineManager(val serviceHub: ServiceHubInternal,
             }
             val session = FlowSessionInternal(
                     flow,
+                    flowSession,
                     random63BitValue(),
                     sender,
                     FlowSessionState.Initiated(sender, senderSessionId, FlowInfo(senderFlowVersion, sessionInit.appName)))
