@@ -5,16 +5,19 @@ import co.paralleluniverse.fibers.Fiber.parkAndSerialize
 import co.paralleluniverse.fibers.FiberScheduler
 import co.paralleluniverse.fibers.Suspendable
 import co.paralleluniverse.strands.Strand
-import com.google.common.primitives.Primitives
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.random63BitValue
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
-import net.corda.core.internal.*
+import net.corda.core.internal.FlowStateMachine
+import net.corda.core.internal.abbreviate
 import net.corda.core.internal.concurrent.OpenFuture
 import net.corda.core.internal.concurrent.openFuture
+import net.corda.core.internal.isRegularFile
+import net.corda.core.internal.staticField
+import net.corda.core.internal.uncheckedCast
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.*
 import net.corda.node.services.api.FlowAppAuditEvent
@@ -31,6 +34,8 @@ import java.nio.file.Paths
 import java.sql.SQLException
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashSet
+import kotlin.collections.LinkedHashMap
 
 class FlowPermissionException(message: String) : FlowException(message)
 
@@ -190,7 +195,6 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
                                           payload: Any,
                                           sessionFlow: FlowLogic<*>,
                                           retrySend: Boolean): UntrustworthyData<T> {
-        requireNonPrimitive(receiveType)
         logger.debug { "sendAndReceive(${receiveType.name}, $otherParty, ${payload.toString().abbreviate(300)}) ..." }
         val session = getConfirmedSessionIfPresent(otherParty, sessionFlow)
         val receivedSessionData: ReceivedSessionMessage<SessionData> = if (session == null) {
@@ -209,18 +213,11 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
     override fun <T : Any> receive(receiveType: Class<T>,
                                    otherParty: Party,
                                    sessionFlow: FlowLogic<*>): UntrustworthyData<T> {
-        requireNonPrimitive(receiveType)
         logger.debug { "receive(${receiveType.name}, $otherParty) ..." }
         val session = getConfirmedSession(otherParty, sessionFlow)
         val sessionData = receiveInternal<SessionData>(session, receiveType)
         logger.debug { "Received ${sessionData.message.payload.toString().abbreviate(300)}" }
         return sessionData.checkPayloadIs(receiveType)
-    }
-
-    private fun requireNonPrimitive(receiveType: Class<*>) {
-        require(!receiveType.isPrimitive) {
-            "Use the wrapper type ${Primitives.wrap(receiveType).name} instead of the primitive $receiveType.class"
-        }
     }
 
     @Suspendable
@@ -298,6 +295,18 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
     override fun persistFlowStackSnapshot(flowClass: Class<out FlowLogic<*>>) {
         FlowStackSnapshotFactory.instance.persistAsJsonFile(flowClass, serviceHub.configuration.baseDirectory, id)
     }
+
+    @Suspendable
+    override fun receiveAll(mappings: Map<FlowSession, Class<out Any>>, sessionFlow: FlowLogic<*>): Map<FlowSession, UntrustworthyData<Any>> {
+        val bySession = HashSet(mappings.keys).map { it -> it to getConfirmedSession(it.counterparty, sessionFlow) }.toMap(LinkedHashMap())
+        val byInternal = HashSet(bySession.entries).associateTo(LinkedHashMap()) { (session, sessionInternal) -> sessionInternal to session }
+        val requests = mappings.mapKeysTo(LinkedHashMap()) { (session, _) -> bySession[session]!! }.map { (session, type) -> ReceiveOnly(session, SessionData::class.java, type) }
+        val received: Map<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<*>>> = ReceiveAll(requests).suspendAndExpectReceive(suspend)
+        return received.confirmReceivedTypes().checkPayloadIds().mapKeysTo(LinkedHashMap()) { (internal, _) -> byInternal[internal]!! }
+    }
+
+    private fun Map<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<*>>>.confirmReceivedTypes() = mapValuesTo(LinkedHashMap()) { (_, pair) -> pair.first to pair.second.confirmReceiveType(pair.first) }
+    private fun LinkedHashMap<FlowSessionInternal, Pair<ReceiveRequest<SessionData>, ReceivedSessionMessage<SessionData>>>.checkPayloadIds() = mapValuesTo(LinkedHashMap()) { (_, pair) -> pair.second.checkPayloadIs(pair.first.userReceiveType as Class<out Any>) }
 
     /**
      * This method will suspend the state machine and wait for incoming session init response from other party.
@@ -400,6 +409,13 @@ class FlowStateMachineImpl<R>(override val id: StateMachineRunId,
     @Suspendable
     private fun <M : ExistingSessionMessage> waitForMessage(receiveRequest: ReceiveRequest<M>): ReceivedSessionMessage<M> {
         return receiveRequest.suspendAndExpectReceive().confirmReceiveType(receiveRequest)
+    }
+
+    private val suspend : ReceiveMultiple.Suspend = object : ReceiveMultiple.Suspend {
+        @Suspendable
+        override fun invoke(request: FlowIORequest) {
+            suspend(request)
+        }
     }
 
     @Suspendable

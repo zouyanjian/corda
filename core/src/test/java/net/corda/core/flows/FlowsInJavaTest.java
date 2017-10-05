@@ -4,18 +4,16 @@ import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.primitives.Primitives;
 import net.corda.core.identity.Party;
 import net.corda.node.internal.StartedNode;
-import net.corda.testing.node.MockNetwork;
 import net.corda.testing.TestConstants;
+import net.corda.testing.node.MockNetwork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static net.corda.testing.CoreTestUtils.chooseIdentity;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.fail;
 
 public class FlowsInJavaTest {
 
@@ -45,30 +43,6 @@ public class FlowsInJavaTest {
         Future<String> result = aliceNode.getServices().startFlow(new SendInUnwrapFlow(chooseIdentity(bobNode.getInfo()))).getResultFuture();
         mockNet.runNetwork();
         assertThat(result.get()).isEqualTo("Hello");
-    }
-
-    @Test
-    public void primitiveClassForReceiveType() throws InterruptedException {
-        // Using the primitive classes causes problems with the checkpointing so we use the wrapper classes and convert
-        // to the primitive class at callsite.
-        for (Class<?> receiveType : Primitives.allWrapperTypes()) {
-            primitiveReceiveTypeTest(receiveType);
-        }
-    }
-
-    private void primitiveReceiveTypeTest(Class<?> receiveType) throws InterruptedException {
-        PrimitiveReceiveFlow flow = new PrimitiveReceiveFlow(chooseIdentity(bobNode.getInfo()), receiveType);
-        Future<?> result = aliceNode.getServices().startFlow(flow).getResultFuture();
-        mockNet.runNetwork();
-        try {
-            result.get();
-            fail("ExecutionException should have been thrown");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause())
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("primitive")
-                    .hasMessageContaining(receiveType.getName());
-        }
     }
 
     @InitiatingFlow

@@ -7,6 +7,7 @@ import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer
 import com.esotericsoftware.kryo.serializers.FieldSerializer
 import com.esotericsoftware.kryo.util.MapReferenceResolver
+import com.google.common.primitives.Primitives
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.PrivacySalt
 import net.corda.core.contracts.StateRef
@@ -459,13 +460,25 @@ object LoggerSerializer : Serializer<Logger>() {
 }
 
 object ClassSerializer : Serializer<Class<*>>() {
+    private val kotlinPrimitives = mapOf(
+            java.lang.Boolean::class.java to Boolean::class.java,
+            java.lang.Byte::class.java to Byte::class.java,
+            java.lang.Character::class.java to Char::class.java,
+            java.lang.Double::class.java to Double::class.java,
+            java.lang.Float::class.java to Float::class.java,
+            java.lang.Integer::class.java to Int::class.java,
+            java.lang.Long::class.java to Long::class.java,
+            java.lang.Short::class.java to Short::class.java,
+            java.lang.Void::class.java to Any::class.java
+    )
     override fun read(kryo: Kryo, input: Input, type: Class<Class<*>>): Class<*> {
         val className = input.readString()
-        return Class.forName(className, true, kryo.classLoader)
+        val clazz = Class.forName(className, true, kryo.classLoader)
+        return kotlinPrimitives[clazz] ?: clazz
     }
 
     override fun write(kryo: Kryo, output: Output, clazz: Class<*>) {
-        output.writeString(clazz.name)
+        output.writeString((if (clazz in Primitives.allPrimitiveTypes()) Primitives.wrap(clazz) else clazz).name)
     }
 }
 

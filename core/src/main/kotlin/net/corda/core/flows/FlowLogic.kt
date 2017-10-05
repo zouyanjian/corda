@@ -14,7 +14,9 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.UntrustworthyData
 import net.corda.core.utilities.debug
+import net.corda.core.utilities.unwrap
 import org.slf4j.Logger
+import kotlin.reflect.KClass
 
 /**
  * A sub-class of [FlowLogic<T>] implements a flow using direct, straight line blocking code. Thus you
@@ -177,6 +179,19 @@ abstract class FlowLogic<out T> {
         return stateMachine.receive(receiveType, otherParty, flowUsedForSessions)
     }
 
+    /** Suspends until the following condition holds: for each session in the specified [mappings] a message has been received, and it is of type [mappings[session]].
+     *
+     * Remember that when receiving data from other parties the data should not be trusted until it's been thoroughly
+     * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
+     * corrupted data in order to exploit your code.
+     *
+     * @returns a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
+     */
+    @Suspendable
+    protected open fun receiveAll(mappings: Map<FlowSession, Class<out Any>>): Map<FlowSession, UntrustworthyData<Any>> {
+        return stateMachine.receiveAll(mappings, this)
+    }
+
     /**
      * Queues the given [payload] for sending to the [otherParty] and continues without suspending.
      *
@@ -230,7 +245,6 @@ abstract class FlowLogic<out T> {
     fun checkFlowPermission(permissionName: String, extraAuditData: Map<String, String>) {
         stateMachine.checkFlowPermission(permissionName, extraAuditData)
     }
-
 
     /**
      * Flows can call this method to record application level flow audit events
@@ -333,6 +347,74 @@ abstract class FlowLogic<out T> {
             }
             ours.setChildProgressTracker(ours.currentStep, theirs)
         }
+    }
+
+    /**
+     * Extracts data from a [Map[FlowSession, UntrustworthyData<Any>]] without performing checks and casting to [R].
+     */
+    protected inline infix fun <reified R : Any> Map<FlowSession, UntrustworthyData<Any>>.from(session: FlowSession): R = this[session]!!.unwrap { it as R }
+
+    /**
+     * Creates a [Pair([session], [Class])] from this [Class].
+     */
+    protected inline infix fun <reified T : Class<out Any>> T.from(session: FlowSession): Pair<FlowSession, T> = session to this
+
+    /**
+     * Creates a [Pair([session], [Class])] from this [KClass].
+     */
+    protected inline infix fun <reified T : Any> KClass<T>.from(session: FlowSession): Pair<FlowSession, Class<T>> = session to this.java
+
+    /**
+     * Suspends until each session in [mappings] receives a message of the associated type in the [Pair].
+     *
+     * Remember that when receiving data from other parties the data should not be trusted until it's been thoroughly
+     * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
+     * corrupted data in order to exploit your code.
+     *
+     * @returns a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
+     */
+    @Suspendable
+    protected fun receiveAll(mapping: Pair<FlowSession, Class<out Any>>, vararg mappings: Pair<FlowSession, Class<out Any>>): Map<FlowSession, UntrustworthyData<Any>> {
+        val allMappings = arrayOf(mapping, *mappings)
+        if (theSameSessionAppearsMoreThanOnceIn(allMappings)) throw IllegalArgumentException("A flow session can only appear once in the mappings.")
+        return receiveAll(mapOf(*allMappings))
+    }
+
+    /**
+     * Suspends until the following condition holds: for each session in [sessions] a message has been received, and it is of type [receiveType].
+     *
+     * Remember that when receiving data from other parties the data should not be trusted until it's been thoroughly
+     * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
+     * corrupted data in order to exploit your code.
+     *
+     * @returns a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
+     */
+    @Suspendable
+    protected fun <R : Any> receiveAll(receiveType: Class<R>, sessions: List<FlowSession>): List<UntrustworthyData<R>> {
+        if (theSameSessionAppearsMoreThanOnceIn(sessions)) throw IllegalArgumentException("A flow session can only appear once in the list of sessions.")
+        return toList(receiveAll(toMap(receiveType, sessions)))
+    }
+
+    /**
+     * Suspends until the following condition holds: for each session in [sessions] a message has been received, and it is of type [receiveType].
+     *
+     * Remember that when receiving data from other parties the data should not be trusted until it's been thoroughly
+     * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
+     * corrupted data in order to exploit your code.
+     *
+     * @returns a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
+     */
+    @Suspendable
+    protected fun <R : Any> receiveAll(receiveType: Class<R>, firstSession: FlowSession, vararg sessions: FlowSession): List<UntrustworthyData<R>> = receiveAll(receiveType, listOf(firstSession, *sessions))
+
+    private fun theSameSessionAppearsMoreThanOnceIn(mappings: Array<out Pair<FlowSession, Class<out Any>>>): Boolean = mappings.groupBy { it.first }.values.any { it.size > 1 }
+    private fun theSameSessionAppearsMoreThanOnceIn(sessions: List<FlowSession>): Boolean = sessions.groupBy { it }.values.any { it.size > 1 }
+    private fun <R> toMap(receiveType: Class<R>, sessions: List<FlowSession>): Map<FlowSession, Class<R>> = sessions.associateByTo(LinkedHashMap(), { it }, { receiveType })
+    private fun <R> toList(map: Map<FlowSession, UntrustworthyData<Any>>): List<UntrustworthyData<R>> {
+        return map.values.map {
+            @Suppress("UNCHECKED_CAST")
+            it as UntrustworthyData<R>
+        }.toList()
     }
 }
 

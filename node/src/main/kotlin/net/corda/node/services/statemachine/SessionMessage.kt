@@ -1,5 +1,6 @@
 package net.corda.node.services.statemachine
 
+import com.google.common.primitives.Primitives
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.UnexpectedFlowEndException
 import net.corda.core.identity.Party
@@ -43,7 +44,7 @@ data class ErrorSessionEnd(override val recipientSessionId: Long, val errorRespo
 data class ReceivedSessionMessage<out M : ExistingSessionMessage>(val sender: Party, val message: M)
 
 fun <T> ReceivedSessionMessage<SessionData>.checkPayloadIs(type: Class<T>): UntrustworthyData<T> {
-    return type.castIfPossible(message.payload)?.let { UntrustworthyData(it) } ?:
+    return (if (type in Primitives.allPrimitiveTypes()) Primitives.wrap(type) else type).castIfPossible(message.payload)?.let { UntrustworthyData(it) } ?:
             throw UnexpectedFlowEndException("We were expecting a ${type.name} from $sender but we instead got a " +
                     "${message.payload.javaClass.name} (${message.payload})")
 }
