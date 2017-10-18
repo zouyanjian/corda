@@ -517,7 +517,7 @@ class NodeVaultServiceTest {
         val cashState = StateAndRef(issueTx.outputs.single(), StateRef(issueTx.id, 0))
 
         database.transaction { service.notify(StatesToRecord.ONLY_RELEVANT, issueTx) }
-        val expectedIssueUpdate = Vault.Update(emptySet(), setOf(cashState), null)
+        val expectedIssueUpdate = Vault.Update(emptySet(), setOf(cashState), emptySet(), null)
 
         database.transaction {
             val moveTx = TransactionBuilder(services.myInfo.chooseIdentity()).apply {
@@ -525,7 +525,7 @@ class NodeVaultServiceTest {
             }.toWireTransaction(services)
             service.notify(StatesToRecord.ONLY_RELEVANT, moveTx)
         }
-        val expectedMoveUpdate = Vault.Update(setOf(cashState), emptySet(), null)
+        val expectedMoveUpdate = Vault.Update(setOf(cashState), emptySet(), emptySet())
 
         val observedUpdates = vaultSubscriber.onNextEvents
         assertEquals(observedUpdates, listOf(expectedIssueUpdate, expectedMoveUpdate))
@@ -574,9 +574,9 @@ class NodeVaultServiceTest {
             service.notify(StatesToRecord.ONLY_RELEVANT, moveTx)
         }
 
-        val expectedIssueUpdate = Vault.Update(emptySet(), setOf(initialCashState), null)
-        val expectedNotaryChangeUpdate = Vault.Update(setOf(initialCashState), setOf(cashStateWithNewNotary), null, Vault.UpdateType.NOTARY_CHANGE)
-        val expectedMoveUpdate = Vault.Update(setOf(cashStateWithNewNotary), emptySet(), null)
+        val expectedIssueUpdate = Vault.Update(emptySet(), setOf(initialCashState), emptySet())
+        val expectedNotaryChangeUpdate = Vault.Update(setOf(initialCashState), setOf(cashStateWithNewNotary), emptySet(),null, Vault.UpdateType.NOTARY_CHANGE)
+        val expectedMoveUpdate = Vault.Update(setOf(cashStateWithNewNotary), emptySet(), emptySet())
 
         val observedUpdates = vaultSubscriber.onNextEvents
         assertEquals(observedUpdates, listOf(expectedIssueUpdate, expectedNotaryChangeUpdate, expectedMoveUpdate))
