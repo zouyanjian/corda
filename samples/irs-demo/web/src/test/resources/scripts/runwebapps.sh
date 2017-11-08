@@ -9,6 +9,7 @@ function run_webapp() {
 }
 
 run_webapp "NotaryService" "cd \"#DIR#\" && java -Dspring.profiles.active=NotaryService -jar #JAR_PATH#"
+run_webapp "Regulator" "cd \"#DIR#\" && java -Dspring.profiles.active=Regulator -jar #JAR_PATH#"
 run_webapp "BankA" "cd \"#DIR#\" && java -Dspring.profiles.active=BankA -jar #JAR_PATH#"
 run_webapp "BankB" "cd \"#DIR#\" && java -Dspring.profiles.active=BankB -jar #JAR_PATH#"
 
