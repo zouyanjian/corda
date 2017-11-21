@@ -1,21 +1,24 @@
 package net.corda.plugins
 
 import com.typesafe.config.*
+import groovy.lang.Closure
 import net.corda.cordform.CordformNode
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.RDN
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.model.ObjectFactory
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import javax.inject.Inject
 
 /**
  * Represents a node that will be installed.
  */
-class Node(private val project: Project) : CordformNode() {
+open class Node @Inject constructor(private val project: Project, private val objectFactory: ObjectFactory) : CordformNode() {
     companion object {
         @JvmStatic
         val nodeJarName = "corda.jar"
@@ -36,8 +39,17 @@ class Node(private val project: Project) : CordformNode() {
      * @note Your app will be installed by default and does not need to be included here.
      * @note Type is any due to gradle's use of "GStrings" - each value will have "toString" called on it
      */
-    var cordapps = mutableListOf<Any>()
+    @Deprecated("Use cordapp instead - will be removed by Corda V4.0")
+    var cordapps: MutableList<Any> = mutableListOf<Any>()
+        set(value) {
+            value.forEach {
+                cordapp({
+                    coordinates = it.toString()
+                })
+            }
+        }
 
+    private val internalCordapps = mutableListOf<Cordapp>()
     private val releaseVersion = project.rootProject.ext<String>("corda_release_version")
     internal lateinit var nodeDir: File
 
@@ -104,6 +116,30 @@ class Node(private val project: Project) : CordformNode() {
     fun sshdPort(sshdPort: Int) {
         config = config.withValue("sshdAddress",
                 ConfigValueFactory.fromAnyRef("$DEFAULT_HOST:$sshdPort"))
+    }
+
+    /**
+     * Add a cordapp to this node
+     *
+     * @param configureClosure A groovy closure to configure a [Cordapp] object
+     * @return The created and inserted [Cordapp]
+     */
+    fun cordapp(configureClosure: Closure<in Cordapp>): Cordapp {
+        val cordapp = project.configure(objectFactory.newInstance(Cordapp::class.java), configureClosure) as Cordapp
+        addCordapp(cordapp)
+        return cordapp
+    }
+
+    /**
+     * Add a cordapp to this node
+     *
+     * @param configureFunc A lambda to configure a [Cordapp] object
+     * @return The created and inserted [Cordapp]
+     */
+    fun cordapp(configureFunc: Cordapp.() -> Unit): Cordapp {
+        val cordapp = objectFactory.newInstance(Cordapp::class.java).apply { configureFunc() }
+        addCordapp(cordapp)
+        return cordapp
     }
 
     internal fun build() {
@@ -296,7 +332,7 @@ class Node(private val project: Project) : CordformNode() {
         val cordappConfiguration = project.configuration("cordapp")
         // Cordapps can sometimes contain a GString instance which fails the equality test with the Java string
         @Suppress("RemoveRedundantCallsOfConversionMethods")
-        val cordapps: List<String> = cordapps.map { it.toString() }
+        val cordapps: List<String> = cordapps.map { it.toString() } + internalCordapps.map { it.coordinates!! }
         return cordapps.map { cordappName ->
             val cordappFile = cordappConfiguration.files { cordappName == (it.group + ":" + it.name + ":" + it.version) }
 
@@ -306,5 +342,13 @@ class Node(private val project: Project) : CordformNode() {
                 else -> cordappFile.single()
             }
         }
+    }
+
+    private fun addCordapp(cordapp: Cordapp) {
+        // TODO: Use gradle @Input annotation to make this required in the build script
+        if(cordapp.coordinates == null) {
+            throw GradleException("cordapp is missing coordinates field")
+        }
+        internalCordapps += cordapp
     }
 }

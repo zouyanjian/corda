@@ -18,9 +18,7 @@ class Cordformation : Plugin<Project> {
          * @param filePathInJar The file in the JAR, relative to root, you wish to access.
          * @return A file handle to the file in the JAR.
          */
-        fun getPluginFile(filePathInJar: String): File {
-            return File(javaClass.getResource(filePathInJar).file)
-        }
+        fun getPluginFile(filePathInJar: String) = File(Cordformation::class.java.getResource(filePathInJar).file)
 
         val executableFileMode = "0755".toInt(8)
     }

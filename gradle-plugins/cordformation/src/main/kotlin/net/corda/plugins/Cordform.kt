@@ -6,6 +6,7 @@ import net.corda.cordform.CordformNode
 import org.apache.tools.ant.filters.FixCrLfFilter
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
 import org.gradle.api.tasks.TaskAction
@@ -15,6 +16,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 /**
  * Creates nodes based on the configuration of this task in the gradle configuration DSL.
@@ -22,7 +24,7 @@ import java.util.concurrent.TimeUnit
  * See documentation for examples.
  */
 @Suppress("unused")
-open class Cordform : DefaultTask() {
+open class Cordform @Inject constructor(private val objectFactory: ObjectFactory) : DefaultTask() {
     /**
      * Optionally the name of a CordformDefinition subclass to which all configuration will be delegated.
      */
@@ -47,7 +49,7 @@ open class Cordform : DefaultTask() {
      */
     @Suppress("MemberVisibilityCanPrivate")
     fun node(configureClosure: Closure<in Node>) {
-        nodes += project.configure(Node(project), configureClosure) as Node
+        nodes += project.configure(objectFactory.newInstance(Node::class.java, project), configureClosure) as Node
     }
 
     /**
@@ -57,7 +59,9 @@ open class Cordform : DefaultTask() {
      */
     @Suppress("MemberVisibilityCanPrivate")
     fun node(configureFunc: Node.() -> Any?): Node {
-        val node = Node(project).apply { configureFunc() }
+        val node = objectFactory.newInstance(Node::class.java, project).apply {
+            configureFunc()
+        }
         nodes += node
         return node
     }
