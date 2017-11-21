@@ -6,6 +6,9 @@ from the previous milestone release.
 
 UNRELEASED
 ----------
+* Per CorDapp configuration is now exposed. ``CordappContext`` now exposes a ``CordappConfig`` object that is populated
+at CorDapp context creation time from a file source during runtime.
+
 * ``AttachmentStorage`` now allows providing metadata on attachments upload - username and filename, currently as plain
   strings. Those can be then used for querying, utilizing ``queryAttachments`` method of the same interface.
 

@@ -76,10 +76,11 @@ private abstract class JavaCommand(
     internal val command: List<String> = mutableListOf<String>().apply {
         add(getJavaPath())
         addAll(jvmArgs)
-        add("-Dname=$nodeName")
+        add("-Dname=\"$nodeName\"")
         null != debugPort && add("-Dcapsule.jvm.args=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$debugPort")
         add("-jar")
         add(jarName)
+
         init()
         addAll(args)
     }
@@ -108,6 +109,7 @@ private class TerminalWindowJavaCommand(jarName: String, dir: File, debugPort: I
 end tell""")
         }
         OS.WINDOWS -> {
+            println(command.joinToString(" "))
             listOf("cmd", "/C", "start ${command.joinToString(" ")}")
         }
         OS.LINUX -> {
