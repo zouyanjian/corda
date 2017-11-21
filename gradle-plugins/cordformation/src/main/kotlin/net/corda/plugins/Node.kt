@@ -5,6 +5,7 @@ import net.corda.cordform.CordformNode
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x500.RDN
 import org.bouncycastle.asn1.x500.style.BCStyle
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -217,6 +218,7 @@ class Node(private val project: Project) : CordformNode() {
 
         // Need to write a temporary file first to use the project.copy, which resolves directories correctly.
         val tmpDir = File(project.buildDir, "tmp")
+        tmpDir.mkdir()
         val tmpConfFile = File(tmpDir, "node.conf")
         Files.write(tmpConfFile.toPath(), configFileText, StandardCharsets.UTF_8)
 
@@ -291,11 +293,18 @@ class Node(private val project: Project) : CordformNode() {
      * @return List of this node's cordapps.
      */
     private fun getCordappList(): Collection<File> {
+        val cordappConfiguration = project.configuration("cordapp")
         // Cordapps can sometimes contain a GString instance which fails the equality test with the Java string
         @Suppress("RemoveRedundantCallsOfConversionMethods")
         val cordapps: List<String> = cordapps.map { it.toString() }
-        return project.configuration("cordapp").files {
-            cordapps.contains(it.group + ":" + it.name + ":" + it.version)
+        return cordapps.map { cordappName ->
+            val cordappFile = cordappConfiguration.files { cordappName == (it.group + ":" + it.name + ":" + it.version) }
+
+            when {
+                cordappFile.size == 0 -> throw GradleException("Cordapp $cordappName not found in cordapps configuration.")
+                cordappFile.size > 1 -> throw GradleException("Multiple files found for $cordappName")
+                else -> cordappFile.single()
+            }
         }
     }
 }
