@@ -1,10 +1,12 @@
 package net.corda.plugins
 
-import com.typesafe.config.*
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigRenderOptions
+import com.typesafe.config.ConfigValueFactory
 import groovy.lang.Closure
 import net.corda.cordform.CordformNode
+import org.apache.commons.io.FilenameUtils
 import org.bouncycastle.asn1.x500.X500Name
-import org.bouncycastle.asn1.x500.RDN
 import org.bouncycastle.asn1.x500.style.BCStyle
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -19,6 +21,8 @@ import javax.inject.Inject
  * Represents a node that will be installed.
  */
 open class Node @Inject constructor(private val project: Project, private val objectFactory: ObjectFactory) : CordformNode() {
+    private data class ResolvedCordapp(val jarFile: File, val config: String?)
+
     companion object {
         @JvmStatic
         val nodeJarName = "corda.jar"
@@ -39,8 +43,9 @@ open class Node @Inject constructor(private val project: Project, private val ob
      * @note Your app will be installed by default and does not need to be included here.
      * @note Type is any due to gradle's use of "GStrings" - each value will have "toString" called on it
      */
-    @Deprecated("Use cordapp instead - will be removed by Corda V4.0")
-    var cordapps: MutableList<Any> = mutableListOf<Any>()
+    var cordapps: MutableList<Any>
+        get() = internalCordapps as MutableList<Any>
+        @Deprecated("Use cordapp instead - setter will be removed by Corda V4.0")
         set(value) {
             value.forEach {
                 cordapp({
@@ -155,19 +160,19 @@ open class Node @Inject constructor(private val project: Project, private val ob
     }
 
     internal fun rootDir(rootDir: Path) {
-        if(name == null) {
+        if (name == null) {
             project.logger.error("Node has a null name - cannot create node")
             throw IllegalStateException("Node has a null name - cannot create node")
         }
 
         val dirName = try {
             val o = X500Name(name).getRDNs(BCStyle.O)
-            if (o.size > 0) {
+            if (o.isNotEmpty()) {
                 o.first().first.value.toString()
             } else {
                 name
             }
-        } catch(_ : IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             // Can't parse as an X500 name, use the full string
             name
         }
@@ -230,14 +235,23 @@ open class Node @Inject constructor(private val project: Project, private val ob
      * Installs other cordapps to this node's cordapps directory.
      */
     private fun installCordapps() {
-        val cordappsDir = File(nodeDir, "cordapps")
         val cordapps = getCordappList()
+        val cordappsDir = File(nodeDir, "cordapps")
         project.copy {
             it.apply {
-                from(cordapps)
+                from(cordapps.map { it.jarFile })
                 into(cordappsDir)
             }
         }
+
+        installCordappConfigs(cordapps)
+    }
+
+    private fun installCordappConfigs(cordapps: Collection<ResolvedCordapp>) {
+        val cordappsDir = File(nodeDir, "cordapps")
+        cordapps.filter { it.config != null }
+                .map { Pair<String, String>("${FilenameUtils.removeExtension(it.jarFile.name)}.conf", it.config!!) }
+                .forEach { project.file(File(cordappsDir, it.first)).writeText(it.second) }
     }
 
     /**
@@ -328,25 +342,25 @@ open class Node @Inject constructor(private val project: Project, private val ob
      *
      * @return List of this node's cordapps.
      */
-    private fun getCordappList(): Collection<File> {
+    private fun getCordappList(): Collection<ResolvedCordapp> {
         val cordappConfiguration = project.configuration("cordapp")
         // Cordapps can sometimes contain a GString instance which fails the equality test with the Java string
         @Suppress("RemoveRedundantCallsOfConversionMethods")
-        val cordapps: List<String> = cordapps.map { it.toString() } + internalCordapps.map { it.coordinates!! }
-        return cordapps.map { cordappName ->
+        return internalCordapps.map { cordapp ->
+            val cordappName = cordapp.coordinates!!.toString()
             val cordappFile = cordappConfiguration.files { cordappName == (it.group + ":" + it.name + ":" + it.version) }
 
             when {
                 cordappFile.size == 0 -> throw GradleException("Cordapp $cordappName not found in cordapps configuration.")
                 cordappFile.size > 1 -> throw GradleException("Multiple files found for $cordappName")
-                else -> cordappFile.single()
+                else -> ResolvedCordapp(cordappFile.single(), cordapp.config)
             }
         }
     }
 
     private fun addCordapp(cordapp: Cordapp) {
         // TODO: Use gradle @Input annotation to make this required in the build script
-        if(cordapp.coordinates == null) {
+        if (cordapp.coordinates == null) {
             throw GradleException("cordapp is missing coordinates field")
         }
         internalCordapps += cordapp
