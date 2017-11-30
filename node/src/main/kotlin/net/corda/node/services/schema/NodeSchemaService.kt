@@ -32,7 +32,7 @@ import net.corda.node.services.vault.VaultSchemaV1
  * TODO: support plugins for schema version upgrading or custom mapping not supported by original [QueryableState].
  * TODO: create whitelisted tables when a CorDapp is first installed
  */
-class NodeSchemaService(extraSchemas: Set<MappedSchema> = emptySet()) : SchemaService, SingletonSerializeAsToken() {
+class NodeSchemaService(extraSchemas: Set<MappedSchema> = emptySet(), additional: Boolean = true) : SchemaService, SingletonSerializeAsToken() {
     // Entities for compulsory services
     object NodeServices
 
@@ -63,7 +63,11 @@ class NodeSchemaService(extraSchemas: Set<MappedSchema> = emptySet()) : SchemaSe
                     Pair(NodeInfoSchemaV1, SchemaOptions()),
                     Pair(NodeServicesV1, SchemaOptions()))
 
-    override val schemaOptions: Map<MappedSchema, SchemaService.SchemaOptions> = requiredSchemas + extraSchemas.associateBy({ it }, { SchemaOptions() })
+    override val schemaOptions: Map<MappedSchema, SchemaService.SchemaOptions> =
+            if (additional)
+                requiredSchemas + extraSchemas.associateBy({ it }, { SchemaOptions() })
+            else
+                extraSchemas.associateBy({ it }, { SchemaOptions() })
 
     // Currently returns all schemas supported by the state, with no filtering or enrichment.
     override fun selectSchemas(state: ContractState): Iterable<MappedSchema> {

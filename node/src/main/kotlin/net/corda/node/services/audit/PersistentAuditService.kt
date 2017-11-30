@@ -3,8 +3,8 @@ package net.corda.node.services.audit
 import net.corda.core.utilities.contextLogger
 import net.corda.node.services.api.AuditEvent
 import net.corda.node.services.api.AuditService
-import net.corda.node.utilities.CordaPersistence
-import net.corda.node.utilities.currentDBSession
+import net.corda.nodeapi.internal.persistence.CordaPersistence
+import net.corda.nodeapi.internal.persistence.currentDBSession
 import java.time.Instant
 import javax.persistence.*
 
@@ -28,10 +28,7 @@ class PersistentAuditService(val database: CordaPersistence) : AuditService {
                                       description = event.description,
                                       contextData = event.contextData.toMutableMap())
         database.transaction {
-            val session = currentDBSession()
-            session.use {
-                session.save(auditRecord)
-            }
+            currentDBSession().save(auditRecord)
         }
     }
 

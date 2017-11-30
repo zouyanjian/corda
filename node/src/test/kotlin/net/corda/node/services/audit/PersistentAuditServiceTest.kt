@@ -3,15 +3,15 @@ package net.corda.node.services.audit
 import net.corda.core.context.InvocationContext
 import net.corda.core.context.Origin
 import net.corda.core.crypto.SecureHash
-import net.corda.core.internal.packageName
+import net.corda.core.schemas.MappedSchema
+import net.corda.node.internal.configureDatabase
 import net.corda.node.services.api.AuditService
 import net.corda.node.services.api.SystemAuditEvent
-import net.corda.node.services.config.DatabaseConfig
 import net.corda.node.services.schema.NodeSchemaService
-import net.corda.node.utilities.configureDatabase
+import net.corda.nodeapi.internal.persistence.DatabaseConfig
 import net.corda.testing.node.MockServices.Companion.makeTestDataSourceProperties
 import net.corda.testing.rigorousMock
-import org.junit.BeforeClass
+import org.junit.Before
 import org.junit.Test
 import java.time.Instant
 
@@ -19,11 +19,11 @@ class PersistentAuditServiceTest {
 
     private lateinit var auditService: AuditService
 
-    @BeforeClass
+    @Before
     fun setUp() {
-        val schemas = mutableListOf(PersistentAuditService.AuditRecord::class.packageName)
+        val mappedSchema = MappedSchema(PersistentAuditService::class.java, 1, listOf(PersistentAuditService.AuditRecord::class.java))
         val dataSourceProps = makeTestDataSourceProperties(nodeName = SecureHash.randomSHA256().toString() + "_audit_")
-        val database = configureDatabase(dataSourceProps, DatabaseConfig(), rigorousMock(), NodeSchemaService(schemas))
+        val database = configureDatabase(dataSourceProps, DatabaseConfig(), rigorousMock(), NodeSchemaService(setOf(mappedSchema), false))
         auditService = PersistentAuditService(database)
     }
 
