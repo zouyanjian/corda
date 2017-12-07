@@ -30,6 +30,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter
 import org.bouncycastle.jce.ECNamedCurveTable
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 import org.bouncycastle.jce.spec.ECParameterSpec
 import org.bouncycastle.jce.spec.ECPrivateKeySpec
 import org.bouncycastle.jce.spec.ECPublicKeySpec
@@ -811,6 +812,7 @@ object Crypto {
     fun deriveKeyPairFromEntropy(signatureScheme: SignatureScheme, entropy: BigInteger): KeyPair {
         return when (signatureScheme) {
             EDDSA_ED25519_SHA512 -> deriveEdDSAKeyPairFromEntropy(entropy)
+            ECDSA_SECP256R1_SHA256, ECDSA_SECP256K1_SHA256 -> deriveECDSAKeyPairFromEntropy(signatureScheme, entropy)
             else -> throw IllegalArgumentException("Unsupported signature scheme for fixed entropy-based key pair " +
                     "generation: ${signatureScheme.schemeCodeName}")
         }
@@ -831,6 +833,32 @@ object Crypto {
         val priv = EdDSAPrivateKeySpec(bytes, params)
         val pub = EdDSAPublicKeySpec(priv.a, params)
         return KeyPair(EdDSAPublicKey(pub), EdDSAPrivateKey(priv))
+    }
+
+    // Custom key pair generator from entropy required for tests. It is similar to deriveKeyPairECDSA,
+    // but the accepted range of the input entropy is more relaxed
+    // 2 < entropy < N, where N is the order of base-point G.
+    private fun deriveECDSAKeyPairFromEntropy(signatureScheme: SignatureScheme, entropy: BigInteger): KeyPair {
+        val parameterSpec = signatureScheme.algSpec as ECNamedCurveParameterSpec
+
+        // There are cases where the entropy is a negative number and/or out of range (e.g. when produced from PRNGs).
+        // In such cases we retry with hash(currentEntropy).
+        while (entropy < ECConstants.TWO || entropy >= parameterSpec.n) {
+            return deriveECDSAKeyPairFromEntropy(signatureScheme, BigInteger(1, entropy.toByteArray().sha256().bytes))
+        }
+
+        val privateKeySpec = ECPrivateKeySpec(entropy, parameterSpec)
+        val priv = BCECPrivateKey("EC", privateKeySpec, BouncyCastleProvider.CONFIGURATION)
+
+        val pointQ = FixedPointCombMultiplier().multiply(parameterSpec.g, entropy)
+        while (pointQ.isInfinity) {
+            // Instead of throwing an exception, we retry with hash(entropy).
+            return deriveECDSAKeyPairFromEntropy(signatureScheme, BigInteger(1, entropy.toByteArray().sha256().bytes))
+        }
+        val publicKeySpec = ECPublicKeySpec(pointQ, parameterSpec)
+        val pub = BCECPublicKey("EC", publicKeySpec, BouncyCastleProvider.CONFIGURATION)
+
+        return KeyPair(pub, priv)
     }
 
     // Compute the HMAC-SHA512 using a privateKey as the MAC_key and a seed ByteArray.
