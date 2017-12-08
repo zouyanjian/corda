@@ -128,7 +128,8 @@ fun generateKeyPair(): KeyPair = Crypto.generateKeyPair()
 /**
  * Returns a key pair derived from the given private key entropy. This is useful for unit tests and other cases where
  * you want hard-coded private keys.
- * This currently works for the default signature scheme EdDSA ed25519 only.
+ * @param entropy a [BigInteger] value.
+ * @return a deterministically generated [KeyPair] for the [Crypto.DEFAULT_SIGNATURE_SCHEME].
  */
 fun entropyToKeyPair(entropy: BigInteger): KeyPair = Crypto.deriveKeyPairFromEntropy(entropy)
 

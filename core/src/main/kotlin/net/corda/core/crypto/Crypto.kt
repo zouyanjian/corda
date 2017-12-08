@@ -802,7 +802,7 @@ object Crypto {
     /**
      * Returns a key pair derived from the given [BigInteger] entropy. This is useful for unit tests
      * and other cases where you want hard-coded private keys.
-     * Currently, [EDDSA_ED25519_SHA512] is the sole scheme supported for this operation.
+     * Currently, the following schemes are supported: [EDDSA_ED25519_SHA512], [ECDSA_SECP256R1_SHA256] and [ECDSA_SECP256K1_SHA256].
      * @param signatureScheme a supported [SignatureScheme], see [Crypto].
      * @param entropy a [BigInteger] value.
      * @return a new [KeyPair] from an entropy input.
@@ -827,6 +827,9 @@ object Crypto {
     fun deriveKeyPairFromEntropy(entropy: BigInteger): KeyPair = deriveKeyPairFromEntropy(DEFAULT_SIGNATURE_SCHEME, entropy)
 
     // Custom key pair generator from entropy.
+    // The BigIntenger.toByteArray() uses the two's-complement representation.
+    // The entropy is transformed to a byte array in big-endian byte-order and
+    // only the first ed25519.field.getb() / 8 bytes are used.
     private fun deriveEdDSAKeyPairFromEntropy(entropy: BigInteger): KeyPair {
         val params = EDDSA_ED25519_SHA512.algSpec as EdDSANamedCurveSpec
         val bytes = entropy.toByteArray().copyOf(params.curve.field.getb() / 8) // Need to pad the entropy to the valid seed length.
@@ -835,13 +838,13 @@ object Crypto {
         return KeyPair(EdDSAPublicKey(pub), EdDSAPrivateKey(priv))
     }
 
-    // Custom key pair generator from entropy required for tests. It is similar to deriveKeyPairECDSA,
-    // but the accepted range of the input entropy is more relaxed
-    // 2 < entropy < N, where N is the order of base-point G.
+    // Custom key pair generator from an entropy required for various tests. It is similar to deriveKeyPairECDSA,
+    // but the accepted range of the input entropy is more relaxed:
+    // 2 <= entropy < N, where N is the order of base-point G.
     private fun deriveECDSAKeyPairFromEntropy(signatureScheme: SignatureScheme, entropy: BigInteger): KeyPair {
         val parameterSpec = signatureScheme.algSpec as ECNamedCurveParameterSpec
 
-        // There are cases where the entropy is a negative number and/or out of range (e.g. when produced from PRNGs).
+        // The entropy might be a negative number and/or out of range (e.g. PRNG output).
         // In such cases we retry with hash(currentEntropy).
         while (entropy < ECConstants.TWO || entropy >= parameterSpec.n) {
             return deriveECDSAKeyPairFromEntropy(signatureScheme, BigInteger(1, entropy.toByteArray().sha256().bytes))
