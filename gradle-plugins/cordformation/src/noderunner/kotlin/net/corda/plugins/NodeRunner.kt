@@ -122,7 +122,7 @@ private class TerminalWindowJavaCommand(jarName: String, dir: File, debugPort: I
 end tell""")
         }
         OS.WINDOWS -> {
-            listOf("cmd", "/C", "start ${command.joinToString(" ")}")
+            listOf("cmd", "/K", "/C", "start ${command.joinToString(" ")}")
         }
         OS.LINUX -> {
             // Start shell to keep window open unless java terminated normally or due to SIGTERM:
