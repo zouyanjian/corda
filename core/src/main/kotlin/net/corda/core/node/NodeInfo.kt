@@ -1,5 +1,7 @@
 package net.corda.core.node
 
+import net.corda.core.crypto.CompositeKey
+import net.corda.core.crypto.keys
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
@@ -27,6 +29,13 @@ data class NodeInfo(val addresses: List<NetworkHostAndPort>,
     // TODO We currently don't support multi-IP/multi-identity nodes, we only left slots in the data structures.
     init {
         require(legalIdentitiesAndCerts.isNotEmpty()) { "Node should have at least one legal identity" }
+        val identityKeys = legalIdentitiesAndCerts.map { it.owningKey }
+        for (identityKey in identityKeys) {
+            if (identityKey !is CompositeKey) continue
+            require(identityKey.leafKeys.any { it in identityKeys }) {
+                "Composite identity does not contain one of the other identities: $identityKey"
+            }
+        }
     }
 
     @Transient private var _legalIdentities: List<Party>? = null
