@@ -1,9 +1,8 @@
 package net.corda.nodeapi.internal
 
-import net.corda.core.crypto.DigitalSignature
-import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.verify
+import net.corda.core.crypto.*
 import net.corda.core.identity.Party
+import net.corda.core.node.NodeInfo
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializedBytes
 import net.corda.core.serialization.deserialize
@@ -56,7 +55,7 @@ data class NotaryInfo(val identity: Party, val validating: Boolean)
  * contained within.
  */
 @CordaSerializable
-class SignedNetworkMap(val raw: SerializedBytes<NetworkMap>, val sig: DigitalSignatureWithCert) {
+class SignedNetworkMap(val raw: SerializedBytes<NetworkMap>, val signature: DigitalSignatureWithCert) {
     /**
      * Return the deserialized NetworkMap if the signature and certificate can be verified.
      *
@@ -65,11 +64,12 @@ class SignedNetworkMap(val raw: SerializedBytes<NetworkMap>, val sig: DigitalSig
      */
     @Throws(SignatureException::class)
     fun verified(): NetworkMap {
-        sig.by.publicKey.verify(raw.bytes, sig)
+        signature.by.publicKey.verify(raw.bytes, signature)
         return raw.deserialize()
     }
 }
 
 // TODO: This class should reside in the [DigitalSignature] class.
+// TODO: Removing the val from signatureBytes causes serialisation issues
 /** A digital signature that identifies who the public key is owned by, and the certificate which provides prove of the identity */
 class DigitalSignatureWithCert(val by: X509Certificate, val signatureBytes: ByteArray) : DigitalSignature(signatureBytes)

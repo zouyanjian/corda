@@ -2,7 +2,6 @@ package net.corda.testing.node.network
 
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.SignedData
 import net.corda.core.crypto.sha256
 import net.corda.core.internal.cert
 import net.corda.core.internal.toX509CertHolder
@@ -11,10 +10,7 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.hours
-import net.corda.nodeapi.internal.DigitalSignatureWithCert
-import net.corda.nodeapi.internal.NetworkMap
-import net.corda.nodeapi.internal.NetworkParameters
-import net.corda.nodeapi.internal.SignedNetworkMap
+import net.corda.nodeapi.internal.*
 import net.corda.nodeapi.internal.crypto.CertificateAndKeyPair
 import net.corda.nodeapi.internal.crypto.CertificateType
 import net.corda.nodeapi.internal.crypto.X509Utilities
@@ -99,13 +95,13 @@ class NetworkMapServer(cacheTimeout: Duration,
 
     @Path("network-map")
     class InMemoryNetworkMapService(private val cacheTimeout: Duration, private val networkMapKeyAndCert: CertificateAndKeyPair) {
-        private val nodeInfoMap = mutableMapOf<SecureHash, SignedData<NodeInfo>>()
+        private val nodeInfoMap = mutableMapOf<SecureHash, SignedNodeInfo>()
 
         @POST
         @Path("publish")
         @Consumes(MediaType.APPLICATION_OCTET_STREAM)
         fun publishNodeInfo(input: InputStream): Response {
-            val registrationData = input.readBytes().deserialize<SignedData<NodeInfo>>()
+            val registrationData = input.readBytes().deserialize<SignedNodeInfo>()
             val nodeInfo = registrationData.verified()
             val nodeInfoHash = nodeInfo.serialize().sha256()
             nodeInfoMap.put(nodeInfoHash, registrationData)
@@ -115,7 +111,7 @@ class NetworkMapServer(cacheTimeout: Duration,
         @GET
         @Produces(MediaType.APPLICATION_OCTET_STREAM)
         fun getNetworkMap(): Response {
-            val networkMap = NetworkMap(nodeInfoMap.keys.map { it }, SecureHash.randomSHA256())
+            val networkMap = NetworkMap(nodeInfoMap.keys.toList(), SecureHash.randomSHA256())
             val serializedNetworkMap = networkMap.serialize()
             val signature = Crypto.doSign(networkMapKeyAndCert.keyPair.private, serializedNetworkMap.bytes)
             val signedNetworkMap = SignedNetworkMap(networkMap.serialize(), DigitalSignatureWithCert(networkMapKeyAndCert.certificate.cert, signature))

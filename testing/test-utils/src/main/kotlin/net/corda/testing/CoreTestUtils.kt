@@ -81,7 +81,7 @@ fun freePort(): Int = freePortCounter.getAndAccumulate(0) { prev, _ -> 30000 + (
  */
 fun getFreeLocalPorts(hostName: String, numberToAlloc: Int): List<NetworkHostAndPort> {
     val freePort = freePortCounter.getAndAccumulate(0) { prev, _ -> 30000 + (prev - 30000 + numberToAlloc) % 10000 }
-    return (freePort..freePort + numberToAlloc - 1).map { NetworkHostAndPort(hostName, it) }
+    return (freePort until freePort + numberToAlloc).map { NetworkHostAndPort(hostName, it) }
 }
 
 fun configureTestSSL(legalName: CordaX500Name): SSLConfiguration = object : SSLConfiguration {
@@ -93,18 +93,29 @@ fun configureTestSSL(legalName: CordaX500Name): SSLConfiguration = object : SSLC
         configureDevKeyAndTrustStores(legalName)
     }
 }
+
 fun getTestPartyAndCertificate(party: Party): PartyAndCertificate {
     val trustRoot: X509CertificateHolder = DEV_TRUST_ROOT
     val intermediate: CertificateAndKeyPair = DEV_CA
 
     val nodeCaName = party.name.copy(commonName = X509Utilities.CORDA_CLIENT_CA_CN)
-    val nameConstraints = NameConstraints(arrayOf(GeneralSubtree(GeneralName(GeneralName.directoryName, party.name.x500Name))), arrayOf())
-    val issuerKeyPair = Crypto.generateKeyPair(Crypto.ECDSA_SECP256K1_SHA256)
-    val issuerCertificate = X509Utilities.createCertificate(CertificateType.NODE_CA, intermediate.certificate, intermediate.keyPair, nodeCaName, issuerKeyPair.public,
-            nameConstraints = nameConstraints)
+    val issuerKeyPair = Crypto.generateKeyPair(X509Utilities.DEFAULT_TLS_SIGNATURE_SCHEME)
+    val nodeCaCert = X509Utilities.createCertificate(
+            CertificateType.NODE_CA,
+            intermediate.certificate,
+            intermediate.keyPair,
+            nodeCaName,
+            issuerKeyPair.public,
+            nameConstraints = NameConstraints(arrayOf(GeneralSubtree(GeneralName(GeneralName.directoryName, party.name.x500Name))), arrayOf()))
 
-    val certHolder = X509Utilities.createCertificate(CertificateType.WELL_KNOWN_IDENTITY, issuerCertificate, issuerKeyPair, party.name, party.owningKey)
-    val pathElements = listOf(certHolder, issuerCertificate, intermediate.certificate, trustRoot)
+    val identityCert = X509Utilities.createCertificate(
+            CertificateType.WELL_KNOWN_IDENTITY,
+            nodeCaCert,
+            issuerKeyPair,
+            party.name,
+            party.owningKey)
+
+    val pathElements = listOf(identityCert, nodeCaCert, intermediate.certificate, trustRoot)
     val certPath = X509CertificateFactory().generateCertPath(pathElements.map(X509CertificateHolder::cert))
     return PartyAndCertificate(certPath)
 }
@@ -117,6 +128,7 @@ fun getTestPartyAndCertificate(name: CordaX500Name, publicKey: PublicKey): Party
 }
 
 class TestIdentity @JvmOverloads constructor(val name: CordaX500Name, entropy: Long? = null) {
+    // TODO Rename this to keyPair
     val key = if (entropy != null) entropyToKeyPair(BigInteger.valueOf(entropy)) else generateKeyPair()
     val pubkey get() = key.public!!
     val party = Party(name, pubkey)
