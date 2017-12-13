@@ -12,6 +12,8 @@
       <module name="bank-of-corda-demo_test" target="1.8" />
       <module name="buildSrc_main" target="1.8" />
       <module name="buildSrc_test" target="1.8" />
+      <module name="certissuer_main" target="1.8" />
+      <module name="certissuer_test" target="1.8" />
       <module name="client_main" target="1.8" />
       <module name="client_test" target="1.8" />
       <module name="confidential-identities_main" target="1.8" />
