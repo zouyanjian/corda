@@ -25,7 +25,7 @@ fun SerializerFactory.addToWhitelist(vararg types: Class<*>) {
     }
 }
 
-abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>) : SerializationScheme {
+abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>, val cordappClassLoader: ClassLoader? = null) : SerializationScheme {
 
     companion object {
         private val serializationWhitelists: List<SerializationWhitelist> by lazy {
@@ -63,6 +63,7 @@ abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>)
             register(net.corda.nodeapi.internal.serialization.amqp.custom.BitSetSerializer(this))
             register(net.corda.nodeapi.internal.serialization.amqp.custom.EnumSetSerializer(this))
             register(net.corda.nodeapi.internal.serialization.amqp.custom.ContractAttachmentSerializer(this))
+            register(net.corda.nodeapi.internal.serialization.amqp.custom.LedgerTransactionSerializer(this, cordappClassLoader))
         }
         for (whitelistProvider in serializationWhitelists) {
             factory.addToWhitelist(*whitelistProvider.whitelist.toTypedArray())
@@ -110,7 +111,7 @@ abstract class AbstractAMQPSerializationScheme(val cordappLoader: List<Cordapp>)
 }
 
 // TODO: This will eventually cover server RPC as well and move to node module, but for now this is not implemented
-class AMQPServerSerializationScheme(cordapps: List<Cordapp> = emptyList()) : AbstractAMQPSerializationScheme(cordapps) {
+class AMQPServerSerializationScheme(cordapps: List<Cordapp> = emptyList(), cordappClassLoader: ClassLoader? = null) : AbstractAMQPSerializationScheme(cordapps, cordappClassLoader) {
     override fun rpcClientSerializerFactory(context: SerializationContext): SerializerFactory {
         throw UnsupportedOperationException()
     }
@@ -127,7 +128,7 @@ class AMQPServerSerializationScheme(cordapps: List<Cordapp> = emptyList()) : Abs
 }
 
 // TODO: This will eventually cover client RPC as well and move to client module, but for now this is not implemented
-class AMQPClientSerializationScheme(cordapps: List<Cordapp> = emptyList()) : AbstractAMQPSerializationScheme(cordapps) {
+class AMQPClientSerializationScheme(cordapps: List<Cordapp> = emptyList(), cordappClassLoader: ClassLoader? = null) : AbstractAMQPSerializationScheme(cordapps, cordappClassLoader) {
     override fun rpcClientSerializerFactory(context: SerializationContext): SerializerFactory {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

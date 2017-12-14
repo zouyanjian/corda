@@ -13,28 +13,6 @@ import java.security.PublicKey
 import java.util.*
 import java.util.function.Predicate
 
-class LegerTransationTransport : SerializationCustomSerializer<LedgerTransaction, LegerTransationTransport.Proxy> {
-
-    data class Proxy(
-            val inputs: List<StateAndRef<ContractState>>,
-            val outputs: List<TransactionState<ContractState>>,
-            /** Arbitrary data passed to the program of each input state. */
-            val commands: List<CommandWithParties<CommandData>>,
-            /** A list of [Attachment] objects identified by the transaction that are needed for this transaction to verify. */
-            val attachments: List<Attachment>,
-            /** The hash of the original serialised WireTransaction. */
-            val id: SecureHash,
-            val notary: Party?,
-            val timeWindow: TimeWindow?,
-            val privacySalt: PrivacySalt
-    )
-
-    override fun fromProxy(proxy: Proxy): LedgerTransaction { throw IllegalStateException("LOL")}
-    override fun toProxy(obj: LedgerTransaction) = throw IllegalStateException("LOL")
-}
-
-
-
 /**
  * A LedgerTransaction is derived from a [WireTransaction]. It is the result of doing the following operations:
  *
@@ -64,7 +42,7 @@ data class LedgerTransaction @JvmOverloads constructor(
         val timeWindow: TimeWindow?,
         val privacySalt: PrivacySalt,
         /** Classloader to use while instantiating Contracts. */
-        @Transient val classLoaderResolver: (ContractClassName) -> ClassLoader? = { null }
+        @Transient private val classLoaderResolver: (ContractClassName) -> ClassLoader? = { null }
 ) : FullTransaction() {
     //DOCEND 1
     init {

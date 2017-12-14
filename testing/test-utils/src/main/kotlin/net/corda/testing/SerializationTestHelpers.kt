@@ -99,8 +99,8 @@ private fun createTestSerializationEnv(label: String): SerializationEnvironmentI
     val factory = SerializationFactoryImpl().apply {
         registerScheme(KryoClientSerializationScheme())
         registerScheme(KryoServerSerializationScheme())
-        registerScheme(AMQPClientSerializationScheme(emptyList()))
-        registerScheme(AMQPServerSerializationScheme(emptyList()))
+        registerScheme(AMQPClientSerializationScheme(emptyList(), this::class.java.classLoader))
+        registerScheme(AMQPServerSerializationScheme(emptyList(), this::class.java.classLoader))
     }
     return object : SerializationEnvironmentImpl(
             factory,

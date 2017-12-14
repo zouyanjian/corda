@@ -93,7 +93,7 @@ class NetworkParametersGenerator {
         _contextSerializationEnv.set(SerializationEnvironmentImpl(
                 SerializationFactoryImpl().apply {
                     registerScheme(KryoParametersSerializationScheme)
-                    registerScheme(AMQPServerSerializationScheme())
+                    registerScheme(AMQPServerSerializationScheme(cordappClassLoader = this::class.java.classLoader))
                 },
                 AMQP_P2P_CONTEXT)
         )
