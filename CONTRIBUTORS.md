@@ -8,6 +8,8 @@ create a pull request, or email <james@r3.com>, if you wish to see
 changes to this list.
 
 * Alberto Arri (R3)
+* Adam Furgal (R3)
+* Alexandre Makiyama (B3)
 * Andras Slemmer (R3)
 * Andrius Dagys (R3)
 * Andrzej Cichocki (R3)
