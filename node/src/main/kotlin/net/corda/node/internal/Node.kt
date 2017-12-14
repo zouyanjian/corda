@@ -258,7 +258,7 @@ open class Node(configuration: NodeConfiguration,
                 printBasicNodeInfo("Database connection url is", "jdbc:h2:$url/node")
             }
         }
-        return super.initialiseDatabasePersistence(schemaService, identityService, insideTransaction)
+        return internalInitialiseDatabasePersistence(schemaService, identityService, insideTransaction, cordappLoader.appClassLoader)
     }
 
     private val _startupComplete = openFuture<Unit>()

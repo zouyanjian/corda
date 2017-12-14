@@ -123,7 +123,8 @@ class TransactionTests {
                 id,
                 null,
                 timeWindow,
-                privacySalt
+                privacySalt,
+                { this::class.java.classLoader }
         )
 
         transaction.verify()
@@ -164,7 +165,8 @@ class TransactionTests {
                 id,
                 notary,
                 timeWindow,
-                privacySalt
+                privacySalt,
+                { this::class.java.classLoader }
         )
 
         assertFailsWith<TransactionVerificationException.NotaryChangeInWrongTransactionType> { buildTransaction() }

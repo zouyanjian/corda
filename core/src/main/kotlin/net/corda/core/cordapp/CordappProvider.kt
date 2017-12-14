@@ -27,4 +27,12 @@ interface CordappProvider {
      * @return An attachment ID if it exists
      */
     fun getContractAttachmentID(contractClassName: ContractClassName): AttachmentId?
+
+    /**
+     * Gets classLoader suitable for loading given contract class
+     *
+     * @param contractClassName The contract to find the classLoader for
+     * @return A classLoader or null if unknown
+     */
+    fun getClassLoaderForClass(contractClassName: ContractClassName): ClassLoader?
 }

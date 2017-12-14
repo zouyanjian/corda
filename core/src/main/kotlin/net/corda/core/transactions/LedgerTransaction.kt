@@ -39,7 +39,9 @@ data class LedgerTransaction(
         override val id: SecureHash,
         override val notary: Party?,
         val timeWindow: TimeWindow?,
-        val privacySalt: PrivacySalt
+        val privacySalt: PrivacySalt,
+        /** Classloader to use while instantiating Contracts. */
+        @Transient private val classLoaderResolver: (ContractClassName) -> ClassLoader?
 ) : FullTransaction() {
     //DOCEND 1
     init {
@@ -49,11 +51,8 @@ data class LedgerTransaction(
         checkEncumbrancesValid()
     }
 
-    private companion object {
-        @JvmStatic
-        private fun createContractFor(className: ContractClassName): Try<Contract> {
-            return Try.on { this::class.java.classLoader.loadClass(className).asSubclass(Contract::class.java).getConstructor().newInstance() }
-        }
+    private fun createContractFor(className: ContractClassName): Try<Contract> {
+        return Try.on { (classLoaderResolver(className) ?: this::class.java.classLoader).loadClass(className).asSubclass(Contract::class.java).getConstructor().newInstance() }
     }
 
     private val contracts: Map<ContractClassName, Try<Contract>> = (inputs.map { it.state.contract } + outputs.map { it.contract })

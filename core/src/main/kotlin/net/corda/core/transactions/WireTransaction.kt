@@ -88,7 +88,8 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
                 resolveIdentity = { services.identityService.partyFromKey(it) },
                 resolveAttachment = { services.attachments.openAttachment(it) },
                 resolveStateRef = { services.loadState(it) },
-                resolveContractAttachment = { services.cordappProvider.getContractAttachmentID(it.contract) }
+                resolveContractAttachment = { services.cordappProvider.getContractAttachmentID(it.contract) },
+                classLoaderResolver = { services.cordappProvider.getClassLoaderForClass(it) }
         )
     }
 
@@ -104,7 +105,8 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
             resolveIdentity: (PublicKey) -> Party?,
             resolveAttachment: (SecureHash) -> Attachment?,
             resolveStateRef: (StateRef) -> TransactionState<*>?,
-            resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?
+            resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?,
+            classLoaderResolver: (ContractClassName) -> ClassLoader?
     ): LedgerTransaction {
         // Look up public keys to authenticated identities. This is just a stub placeholder and will all change in future.
         val authenticatedArgs = commands.map {
@@ -118,7 +120,7 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
         val contractAttachments = findAttachmentContracts(resolvedInputs, resolveContractAttachment, resolveAttachment)
         // Order of attachments is important since contracts may refer to indexes so only append automatic attachments
         val attachments = (attachments.map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) } + contractAttachments).distinct()
-        return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt)
+        return LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt, classLoaderResolver)
     }
 
     /**

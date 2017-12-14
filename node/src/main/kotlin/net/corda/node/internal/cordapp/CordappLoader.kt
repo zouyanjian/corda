@@ -43,7 +43,7 @@ import kotlin.streams.toList
 class CordappLoader private constructor(private val cordappJarPaths: List<RestrictedURL>) {
     val cordapps: List<Cordapp> by lazy { loadCordapps() + coreCordapp }
 
-    internal val appClassLoader: ClassLoader = URLClassLoader(cordappJarPaths.stream().map { it.url }.toTypedArray(), javaClass.classLoader)
+    val appClassLoader: ClassLoader = URLClassLoader(cordappJarPaths.map { it.url }.toTypedArray(), javaClass.classLoader)
 
     init {
         if (cordappJarPaths.isEmpty()) {
@@ -68,7 +68,7 @@ class CordappLoader private constructor(private val cordappJarPaths: List<Restri
          * @param baseDir The directory that this node is running in. Will use this to resolve the cordapps directory
          *                  for classpath scanning.
          */
-        fun createDefault(baseDir: Path) = CordappLoader(getCordappsInDirectory(getCordappsPath(baseDir)))
+        fun createDefault(baseDir: Path): CordappLoader = CordappLoader(getCordappsInDirectory(getCordappsPath(baseDir)))
 
         // Cache for CordappLoaders to avoid costly classpath scanning
         private val cordappLoadersCache = LRUMap<List<*>, CordappLoader>(1000)

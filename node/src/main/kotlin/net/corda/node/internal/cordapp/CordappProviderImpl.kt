@@ -72,4 +72,12 @@ open class CordappProviderImpl(private val cordappLoader: CordappLoader, attachm
      * @return cordapp A cordapp or null if no cordapp has the given class loaded
      */
     fun getCordappForClass(className: String): Cordapp? = cordapps.find { it.cordappClasses.contains(className) }
+
+    /**
+     * Gets classLoader suitable for loading given contract class
+     *
+     * @param contractClassName The contract to find the classLoader for
+     * @return A classLoader or null if unknown
+     */
+    override fun getClassLoaderForClass(contractClassName: ContractClassName): ClassLoader? = cordappLoader.appClassLoader
 }

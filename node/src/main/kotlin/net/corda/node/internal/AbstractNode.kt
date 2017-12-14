@@ -595,10 +595,12 @@ abstract class AbstractNode(val configuration: NodeConfiguration,
     // Specific class so that MockNode can catch it.
     class DatabaseConfigurationException(msg: String) : CordaException(msg)
 
-    protected open fun <T> initialiseDatabasePersistence(schemaService: SchemaService, identityService: IdentityService, insideTransaction: (CordaPersistence) -> T): T {
+    protected abstract fun <T> initialiseDatabasePersistence(schemaService: SchemaService, identityService: IdentityService, insideTransaction: (CordaPersistence) -> T): T
+
+    protected fun <T> internalInitialiseDatabasePersistence(schemaService: SchemaService, identityService: IdentityService, insideTransaction: (CordaPersistence) -> T, classLoader: ClassLoader? = null): T {
         val props = configuration.dataSourceProperties
         if (props.isNotEmpty()) {
-            val database = configureDatabase(props, configuration.database, identityService, schemaService)
+            val database = configureDatabase(props, configuration.database, identityService, schemaService, classLoader)
             // Now log the vendor string as this will also cause a connection to be tested eagerly.
             database.transaction {
                 log.info("Connected to ${database.dataSource.connection.metaData.databaseProductName} database.")
@@ -812,7 +814,8 @@ internal class NetworkMapCacheEmptyException : Exception()
 fun configureDatabase(dataSourceProperties: Properties,
                       databaseConfig: DatabaseConfig,
                       identityService: IdentityService,
-                      schemaService: SchemaService = NodeSchemaService()): CordaPersistence {
+                      schemaService: SchemaService = NodeSchemaService(),
+                      classLoader: ClassLoader? = null): CordaPersistence {
     // Register the AbstractPartyDescriptor so Hibernate doesn't warn when encountering AbstractParty. Unfortunately
     // Hibernate warns about not being able to find a descriptor if we don't provide one, but won't use it by default
     // so we end up providing both descriptor and converter. We should re-examine this in later versions to see if
@@ -821,5 +824,5 @@ fun configureDatabase(dataSourceProperties: Properties,
     val config = HikariConfig(dataSourceProperties)
     val dataSource = HikariDataSource(config)
     val attributeConverters = listOf(AbstractPartyToX500NameAsStringConverter(identityService))
-    return CordaPersistence(dataSource, databaseConfig, schemaService.schemaOptions.keys, attributeConverters)
+    return CordaPersistence(dataSource, databaseConfig, schemaService.schemaOptions.keys, attributeConverters, classLoader)
 }
