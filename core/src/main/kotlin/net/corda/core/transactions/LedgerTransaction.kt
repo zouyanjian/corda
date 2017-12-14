@@ -64,7 +64,7 @@ data class LedgerTransaction @JvmOverloads constructor(
         val timeWindow: TimeWindow?,
         val privacySalt: PrivacySalt,
         /** Classloader to use while instantiating Contracts. */
-        @Transient private val classLoaderResolver: (ContractClassName) -> ClassLoader? = { null }
+        @Transient val classLoaderResolver: (ContractClassName) -> ClassLoader? = { null }
 ) : FullTransaction() {
     //DOCEND 1
     init {
