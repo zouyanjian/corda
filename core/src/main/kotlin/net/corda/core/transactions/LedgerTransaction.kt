@@ -7,10 +7,33 @@ import net.corda.core.internal.UpgradeCommand
 import net.corda.core.internal.castIfPossible
 import net.corda.core.internal.uncheckedCast
 import net.corda.core.serialization.CordaSerializable
+import net.corda.core.serialization.SerializationCustomSerializer
 import net.corda.core.utilities.Try
 import java.security.PublicKey
 import java.util.*
 import java.util.function.Predicate
+
+class LegerTransationTransport : SerializationCustomSerializer<LedgerTransaction, LegerTransationTransport.Proxy> {
+
+    data class Proxy(
+            val inputs: List<StateAndRef<ContractState>>,
+            val outputs: List<TransactionState<ContractState>>,
+            /** Arbitrary data passed to the program of each input state. */
+            val commands: List<CommandWithParties<CommandData>>,
+            /** A list of [Attachment] objects identified by the transaction that are needed for this transaction to verify. */
+            val attachments: List<Attachment>,
+            /** The hash of the original serialised WireTransaction. */
+            val id: SecureHash,
+            val notary: Party?,
+            val timeWindow: TimeWindow?,
+            val privacySalt: PrivacySalt
+    )
+
+    override fun fromProxy(proxy: Proxy): LedgerTransaction { throw IllegalStateException("LOL")}
+    override fun toProxy(obj: LedgerTransaction) = throw IllegalStateException("LOL")
+}
+
+
 
 /**
  * A LedgerTransaction is derived from a [WireTransaction]. It is the result of doing the following operations:
@@ -27,7 +50,7 @@ import java.util.function.Predicate
 // currently sends this across to out-of-process verifiers. We'll need to change that first.
 // DOCSTART 1
 @CordaSerializable
-data class LedgerTransaction(
+data class LedgerTransaction @JvmOverloads constructor(
         /** The resolved input states which will be consumed/invalidated by the execution of this transaction. */
         override val inputs: List<StateAndRef<ContractState>>,
         override val outputs: List<TransactionState<ContractState>>,
