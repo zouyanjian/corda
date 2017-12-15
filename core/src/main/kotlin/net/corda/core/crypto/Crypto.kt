@@ -77,7 +77,7 @@ object Crypto {
             "RSA",
             "SHA256WITHRSAEncryption",
             null,
-            3072,
+            2226,
             "RSA_SHA256 signature scheme using SHA256 as hash algorithm."
     )
 
@@ -167,7 +167,7 @@ object Crypto {
 
     /** Our default signature scheme if no algorithm is specified (e.g. for key generation). */
     @JvmField
-    val DEFAULT_SIGNATURE_SCHEME = EDDSA_ED25519_SHA512
+    val DEFAULT_SIGNATURE_SCHEME = RSA_SHA256
 
     /**
      * Supported digital signature schemes.
@@ -813,6 +813,7 @@ object Crypto {
         return when (signatureScheme) {
             EDDSA_ED25519_SHA512 -> deriveEdDSAKeyPairFromEntropy(entropy)
             ECDSA_SECP256R1_SHA256, ECDSA_SECP256K1_SHA256 -> deriveECDSAKeyPairFromEntropy(signatureScheme, entropy)
+            RSA_SHA256 -> deriveRSAKeyFromEntropy(entropy)
             else -> throw IllegalArgumentException("Unsupported signature scheme for fixed entropy-based key pair " +
                     "generation: ${signatureScheme.schemeCodeName}")
         }
@@ -862,6 +863,13 @@ object Crypto {
         val pub = BCECPublicKey("EC", publicKeySpec, BouncyCastleProvider.CONFIGURATION)
 
         return KeyPair(pub, priv)
+    }
+
+    private fun deriveRSAKeyFromEntropy(entropy: BigInteger): KeyPair {
+        val keyPairGenerator = KeyPairGenerator.getInstance(RSA_SHA256.algorithmName, providerMap[RSA_SHA256.providerName])
+        keyPairGenerator.initialize(RSA_SHA256.keySize!!, DeterministicSecureRandom(entropy.toByteArray()))
+        return keyPairGenerator.generateKeyPair()
+
     }
 
     // Compute the HMAC-SHA512 using a privateKey as the MAC_key and a seed ByteArray.

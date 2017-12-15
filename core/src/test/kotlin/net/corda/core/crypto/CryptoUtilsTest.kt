@@ -17,6 +17,7 @@ import org.bouncycastle.jce.interfaces.ECKey
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec
 import org.bouncycastle.pqc.jcajce.provider.sphincs.BCSphincs256PrivateKey
 import org.bouncycastle.pqc.jcajce.provider.sphincs.BCSphincs256PublicKey
+import org.bouncycastle.util.test.FixedSecureRandom
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import java.math.BigInteger

@@ -11,6 +11,7 @@ import net.corda.core.node.services.UniquenessProvider
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.utilities.contextLogger
+import net.corda.core.utilities.toSHA256Bytes
 import net.corda.node.utilities.AppendOnlyPersistentMap
 import net.corda.nodeapi.internal.persistence.NODE_DATABASE_PREFIX
 import java.io.Serializable
@@ -41,8 +42,8 @@ class PersistentUniquenessProvider : UniquenessProvider, SingletonSerializeAsTok
     data class PersistentParty(
             @Column(name = "requesting_party_name")
             var name: String = "",
-
-            @Column(name = "requesting_party_key", length = 255)
+            /** Hash of the public key. */
+            @Column(name = "requesting_party_key", length = 16)
             var owningKey: ByteArray = ByteArray(0)
     ) : Serializable
 
@@ -80,7 +81,7 @@ class PersistentUniquenessProvider : UniquenessProvider, SingletonSerializeAsTok
                                     id = PersistentStateRef(txHash.toString(), index),
                                     consumingTxHash = id.toString(),
                                     consumingIndex = inputIndex,
-                                    party = PersistentParty(requestingParty.name.toString(), requestingParty.owningKey.encoded)
+                                    party = PersistentParty(requestingParty.name.toString(), requestingParty.owningKey.toSHA256Bytes())
                             )
                         },
                         persistentEntityClass = PersistentNotaryCommit::class.java

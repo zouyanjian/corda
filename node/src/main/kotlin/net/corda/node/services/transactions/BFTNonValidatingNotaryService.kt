@@ -6,6 +6,7 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SecureHash
+import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.NotaryError
@@ -119,7 +120,7 @@ class BFTNonValidatingNotaryService(override val services: ServiceHubInternal,
                             consumingTxHash = id.toString(),
                             consumingIndex = inputIndex,
                             party = PersistentUniquenessProvider.PersistentParty(requestingParty.name.toString(),
-                                    requestingParty.owningKey.encoded)
+                                    requestingParty.owningKey.toSHA256Bytes())
                     )
                 },
                 persistentEntityClass = PersistedCommittedState::class.java
