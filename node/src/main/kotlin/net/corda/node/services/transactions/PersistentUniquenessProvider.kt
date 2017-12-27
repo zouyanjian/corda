@@ -19,7 +19,7 @@ import java.util.*
 import javax.annotation.concurrent.ThreadSafe
 import javax.persistence.*
 
-/** A RDBMS backed Uniqueness provider */
+/** A RDBMS backed Uniqueness provider. */
 @ThreadSafe
 class PersistentUniquenessProvider : UniquenessProvider, SingletonSerializeAsToken() {
 
@@ -42,8 +42,8 @@ class PersistentUniquenessProvider : UniquenessProvider, SingletonSerializeAsTok
     data class PersistentParty(
             @Column(name = "requesting_party_name")
             var name: String = "",
-            /** Hash of the public key. */
-            @Column(name = "requesting_party_key", length = 16)
+            /** Encoded public key. Sphincs uses the bigger public key ~1100 bytes. */
+            @Column(name = "requesting_party_key", length = 1200)
             var owningKey: ByteArray = ByteArray(0)
     ) : Serializable
 
@@ -81,7 +81,7 @@ class PersistentUniquenessProvider : UniquenessProvider, SingletonSerializeAsTok
                                     id = PersistentStateRef(txHash.toString(), index),
                                     consumingTxHash = id.toString(),
                                     consumingIndex = inputIndex,
-                                    party = PersistentParty(requestingParty.name.toString(), requestingParty.owningKey.toSHA256Bytes())
+                                    party = PersistentParty(requestingParty.name.toString(), requestingParty.owningKey.encoded)
                             )
                         },
                         persistentEntityClass = PersistentNotaryCommit::class.java

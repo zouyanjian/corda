@@ -120,7 +120,7 @@ class BFTNonValidatingNotaryService(override val services: ServiceHubInternal,
                             consumingTxHash = id.toString(),
                             consumingIndex = inputIndex,
                             party = PersistentUniquenessProvider.PersistentParty(requestingParty.name.toString(),
-                                    requestingParty.owningKey.toSHA256Bytes())
+                                    requestingParty.owningKey.encoded)
                     )
                 },
                 persistentEntityClass = PersistedCommittedState::class.java

@@ -1614,12 +1614,13 @@ class VaultQueryTests {
     // specifying Query on Linear state attributes
     @Test
     fun `unconsumed linear heads for linearId between two timestamps`() {
+        val delay  = 15000L // In millisecs.
         val start = Instant.now()
-        val end = start.plus(1, ChronoUnit.SECONDS)
+        val end = start.plus(delay, ChronoUnit.MILLIS)
 
         database.transaction {
             vaultFiller.fillWithSomeTestLinearStates(1, "TEST")
-            sleep(1000)
+            sleep(delay)
             vaultFiller.fillWithSomeTestLinearStates(1, "TEST")
             // 2 unconsumed states with same external ID
             val recordedBetweenExpression = TimeCondition(TimeInstantType.RECORDED, builder { between(start, end) })
@@ -1650,13 +1651,14 @@ class VaultQueryTests {
     // specifying Query on Linear state attributes
     @Test
     fun `unconsumed linear heads for linearId between two timestamps for a given external id`() {
+        val delay = 15000L // In millisecs.
         val start = Instant.now()
-        val end = start.plus(1, ChronoUnit.SECONDS)
+        val end = start.plus(delay, ChronoUnit.MILLIS)
 
         database.transaction {
             vaultFiller.fillWithSomeTestLinearStates(1, "TEST1")
             vaultFiller.fillWithSomeTestLinearStates(1, "TEST2")
-            sleep(1000)
+            sleep(delay)
             vaultFiller.fillWithSomeTestLinearStates(1, "TEST3")
             // 2 unconsumed states with same external ID
 

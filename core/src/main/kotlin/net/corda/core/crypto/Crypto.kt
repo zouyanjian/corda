@@ -77,7 +77,7 @@ object Crypto {
             "RSA",
             "SHA256WITHRSAEncryption",
             null,
-            2226,
+            3072,
             "RSA_SHA256 signature scheme using SHA256 as hash algorithm."
     )
 
@@ -141,7 +141,7 @@ object Crypto {
             "SPHINCS-256_SHA512",
             AlgorithmIdentifier(BCObjectIdentifiers.sphincs256_with_SHA512, DLSequence(arrayOf(ASN1Integer(0), SHA512_256))),
             listOf(AlgorithmIdentifier(BCObjectIdentifiers.sphincs256, DLSequence(arrayOf(ASN1Integer(0), SHA512_256)))),
-            "BCPQC",
+            BouncyCastleProvider.PROVIDER_NAME,
             "SPHINCS256",
             "SHA512WITHSPHINCS256",
             SPHINCS256KeyGenParameterSpec(SPHINCS256KeyGenParameterSpec.SHA512_256),
@@ -167,7 +167,7 @@ object Crypto {
 
     /** Our default signature scheme if no algorithm is specified (e.g. for key generation). */
     @JvmField
-    val DEFAULT_SIGNATURE_SCHEME = RSA_SHA256
+    val DEFAULT_SIGNATURE_SCHEME = SPHINCS256_SHA256
 
     /**
      * Supported digital signature schemes.
@@ -197,10 +197,11 @@ object Crypto {
     // The val is private to avoid any harmful state changes.
     private val providerMap: Map<String, Provider> = mapOf(
             BouncyCastleProvider.PROVIDER_NAME to getBouncyCastleProvider(),
-            CordaSecurityProvider.PROVIDER_NAME to CordaSecurityProvider(),
-            "BCPQC" to BouncyCastlePQCProvider()) // Unfortunately, provider's name is not final in BouncyCastlePQCProvider, so we explicitly set it.
+            CordaSecurityProvider.PROVIDER_NAME to CordaSecurityProvider())
+            // "BCPQC" to BouncyCastlePQCProvider()) // Unfortunately, provider's name is not final in BouncyCastlePQCProvider, so we explicitly set it.
 
     private fun getBouncyCastleProvider() = BouncyCastleProvider().apply {
+        putAll(BouncyCastlePQCProvider())
         putAll(EdDSASecurityProvider())
         // Override the normal EdDSA engine with one which can handle X509 keys.
         put("Signature.${EdDSAEngine.SIGNATURE_ALGORITHM}", X509EdDSAEngine::class.qualifiedName)
@@ -814,6 +815,7 @@ object Crypto {
             EDDSA_ED25519_SHA512 -> deriveEdDSAKeyPairFromEntropy(entropy)
             ECDSA_SECP256R1_SHA256, ECDSA_SECP256K1_SHA256 -> deriveECDSAKeyPairFromEntropy(signatureScheme, entropy)
             RSA_SHA256 -> deriveRSAKeyFromEntropy(entropy)
+            SPHINCS256_SHA256 -> deriveSphincsKeyFromEntropy(entropy)
             else -> throw IllegalArgumentException("Unsupported signature scheme for fixed entropy-based key pair " +
                     "generation: ${signatureScheme.schemeCodeName}")
         }
@@ -869,7 +871,12 @@ object Crypto {
         val keyPairGenerator = KeyPairGenerator.getInstance(RSA_SHA256.algorithmName, providerMap[RSA_SHA256.providerName])
         keyPairGenerator.initialize(RSA_SHA256.keySize!!, DeterministicSecureRandom(entropy.toByteArray()))
         return keyPairGenerator.generateKeyPair()
+    }
 
+    private fun deriveSphincsKeyFromEntropy(entropy: BigInteger): KeyPair {
+        val keyPairGenerator = KeyPairGenerator.getInstance(SPHINCS256_SHA256.algorithmName, providerMap[SPHINCS256_SHA256.providerName])
+        keyPairGenerator.initialize(SPHINCS256_SHA256.algSpec, DeterministicSecureRandom(entropy.toByteArray()))
+        return keyPairGenerator.generateKeyPair()
     }
 
     // Compute the HMAC-SHA512 using a privateKey as the MAC_key and a seed ByteArray.
