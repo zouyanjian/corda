@@ -2,6 +2,8 @@ package net.corda.core.crypto
 
 import net.corda.core.internal.X509EdDSAEngine
 import net.corda.core.serialization.serialize
+import net.corda.core.utilities.toBase58
+import net.corda.core.utilities.toBase58String
 import net.i2p.crypto.eddsa.*
 import net.i2p.crypto.eddsa.math.GroupElement
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec
@@ -530,7 +532,7 @@ object Crypto {
         if (verificationResult) {
             return true
         } else {
-            throw SignatureException("Signature Verification failed!")
+            throw SignatureException("Signature Verification failed for [scheme: ${signatureScheme.algorithmName}, key: ${publicKey.toBase58String()}, signatureData: ${signatureData.toBase58()}, clearData: ${clearData.toBase58()}]")
         }
     }
 
