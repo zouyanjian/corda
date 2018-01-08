@@ -2,7 +2,12 @@ package net.corda.core.crypto
 
 import net.corda.core.internal.X509EdDSAEngine
 import net.corda.core.serialization.serialize
-import net.i2p.crypto.eddsa.*
+import net.corda.core.utilities.loggerFor
+import net.corda.core.utilities.toBase64
+import net.i2p.crypto.eddsa.EdDSAEngine
+import net.i2p.crypto.eddsa.EdDSAPrivateKey
+import net.i2p.crypto.eddsa.EdDSAPublicKey
+import net.i2p.crypto.eddsa.EdDSASecurityProvider
 import net.i2p.crypto.eddsa.math.GroupElement
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable
@@ -39,13 +44,14 @@ import org.bouncycastle.pqc.jcajce.provider.sphincs.BCSphincs256PublicKey
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec
 import java.math.BigInteger
 import java.security.*
-import java.security.KeyFactory
-import java.security.KeyPairGenerator
 import java.security.spec.InvalidKeySpecException
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+
+
+val logger = loggerFor<Crypto>()
 
 /**
  * This object controls and provides the available and supported signature schemes for Corda.
@@ -549,8 +555,27 @@ object Crypto {
     @JvmStatic
     @Throws(InvalidKeyException::class, SignatureException::class)
     fun doVerify(txId: SecureHash, transactionSignature: TransactionSignature): Boolean {
+
+        logger.info("MICHELE - Trader")
+
         val signableData = SignableData(txId, transactionSignature.signatureMetadata)
-        return Crypto.doVerify(transactionSignature.by, transactionSignature.bytes, signableData.serialize().bytes)
+
+        var signableDataBytes: ByteArray
+
+//        val signableDataBytes = signableData.serialize().bytes
+        if (signableData.signatureMetadata.platformVersion == 1) {
+            logger.info("MICHELE - Trader")
+
+//        val signableDataBytes = signableData.serialize().bytes
+            signableDataBytes = signableData.signatureMetadata.schemeNumberID.serialize().bytes + signableData.signatureMetadata.platformVersion.serialize().bytes + signableData.txId.bytes
+//            signableDataBytes = signableData.signatureMetadata.schemeNumberID.serialize().bytes + signableData.signatureMetadata.platformVersion.serialize().bytes + signableData.txId.serialize().bytes
+            logger.info("MICHELE - About to verify signature from notary: ${transactionSignature.bytes.toBase64()}")
+            logger.info("MICHELE - Serialised signableData: ${signableDataBytes.toBase64()}")
+        } else {
+            signableDataBytes = signableData.serialize().bytes
+        }
+
+        return Crypto.doVerify(transactionSignature.by, transactionSignature.bytes, signableDataBytes)
     }
 
     /**
@@ -775,7 +800,7 @@ object Crypto {
         val pointQ = FixedPointCombMultiplier().multiply(parameterSpec.g, deterministicD)
         // This is unlikely to happen, but we should check for point at infinity.
         if (pointQ.isInfinity)
-            // Instead of throwing an exception, we retry with SHA256(seed).
+        // Instead of throwing an exception, we retry with SHA256(seed).
             return deriveKeyPairECDSA(parameterSpec, privateKey, seed.sha256().bytes)
         val publicKeySpec = ECPublicKeySpec(pointQ, parameterSpec)
         val publicKeyD = BCECPublicKey(privateKey.algorithm, publicKeySpec, BouncyCastleProvider.CONFIGURATION)
@@ -849,6 +874,7 @@ object Crypto {
         override fun generatePublic(keyInfo: SubjectPublicKeyInfo?): PublicKey? {
             return keyInfo?.let { decodePublicKey(signatureScheme, it.encoded) }
         }
+
         override fun generatePrivate(keyInfo: PrivateKeyInfo?): PrivateKey? {
             return keyInfo?.let { decodePrivateKey(signatureScheme, it.encoded) }
         }
