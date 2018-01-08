@@ -2,6 +2,8 @@ package net.corda.core.crypto
 
 import net.corda.core.internal.X509EdDSAEngine
 import net.corda.core.serialization.serialize
+import net.corda.core.utilities.loggerFor
+import net.corda.core.utilities.toBase64
 import net.i2p.crypto.eddsa.*
 import net.i2p.crypto.eddsa.math.GroupElement
 import net.i2p.crypto.eddsa.spec.EdDSANamedCurveSpec
@@ -46,6 +48,8 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+
+val logger = loggerFor<Crypto>()
 
 /**
  * This object controls and provides the available and supported signature schemes for Corda.
@@ -454,12 +458,23 @@ object Crypto {
     @JvmStatic
     @Throws(InvalidKeyException::class, SignatureException::class)
     fun doSign(keyPair: KeyPair, signableData: SignableData): TransactionSignature {
+
+        logger.info("MICHELE - Notary")
+
         val sigKey: SignatureScheme = findSignatureScheme(keyPair.private)
         val sigMetaData: SignatureScheme = findSignatureScheme(keyPair.public)
         require(sigKey == sigMetaData) {
             "Metadata schemeCodeName: ${sigMetaData.schemeCodeName} is not aligned with the key type: ${sigKey.schemeCodeName}."
         }
-        val signatureBytes = doSign(sigKey.schemeCodeName, keyPair.private, signableData.serialize().bytes)
+
+        val signableDataBytes = signableData.signatureMetadata.schemeNumberID.serialize().bytes + signableData.signatureMetadata.platformVersion.serialize().bytes + signableData.txId.bytes
+//        val signableDataBytes = signableData.signatureMetadata.schemeNumberID.serialize().bytes + signableData.signatureMetadata.platformVersion.serialize().bytes + signableData.txId.serialize().bytes
+//        val signableDataBytes = signableData.serialize().bytes
+        val signatureBytes = doSign(sigKey.schemeCodeName, keyPair.private, signableDataBytes)
+
+        logger.info("MICHELE - About to send signature back: ${signatureBytes.toBase64()}")
+        logger.info("MICHELE - Serialised signableData: ${signableDataBytes.toBase64()}")
+
         return TransactionSignature(signatureBytes, keyPair.public, signableData.signatureMetadata)
     }
 
