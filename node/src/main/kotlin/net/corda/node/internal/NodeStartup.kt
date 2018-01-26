@@ -121,6 +121,10 @@ open class NodeStartup(val args: Array<String>) {
     }
 
     open protected fun logStartupInfo(versionInfo: VersionInfo, cmdlineOptions: CmdLineOptions, conf: FullNodeConfiguration) {
+        logger.info("Azure Key Vault base URL: ${conf.azureKeyVaultBaseUrl}")
+        logger.info("Azure Key Vault key name: ${conf.azureKeyVaultNodeCAKeyName}")
+        logger.info("Azure Key Vault Application ID: ${conf.azureKeyVaultApplicationId}")
+
         logger.info("Vendor: ${versionInfo.vendor}")
         logger.info("Release: ${versionInfo.releaseVersion}")
         logger.info("Platform Version: ${versionInfo.platformVersion}")

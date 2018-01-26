@@ -70,10 +70,26 @@ import javax.crypto.spec.SecretKeySpec
  * </ul>
  */
 object Crypto {
+
+    // 1.2.840.113549.1.1.11
+    val SHA256WithRSA = SignatureScheme(
+            0,
+            "SHA256WithRSA",
+            AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, null),
+            emptyList(),
+            BouncyCastleProvider.PROVIDER_NAME,
+            "RSA",
+            "SHA256withRSA",
+            null,
+            2048,
+            "1.2.840.113549.1.1.11"
+    )
+
     /**
      * RSA_SHA256 signature scheme using SHA256 as hash algorithm and MGF1 (with SHA256) as mask generation function.
      * Note: Recommended key size >= 3072 bits.
      */
+    // 1.2.840.113549.1.1.10
     val RSA_SHA256 = SignatureScheme(
             1,
             "RSA_SHA256",
@@ -174,7 +190,8 @@ object Crypto {
      * Note: Only the schemes added in this map will be supported (see [Crypto]).
      */
     val supportedSignatureSchemes = listOf(
-            RSA_SHA256,
+            SHA256WithRSA,
+            //RSA_SHA256,
             ECDSA_SECP256K1_SHA256,
             ECDSA_SECP256R1_SHA256,
             EDDSA_ED25519_SHA512,

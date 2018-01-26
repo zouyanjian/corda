@@ -27,6 +27,7 @@ import net.corda.testing.rpcTestUser
 import net.corda.testing.startRpcClient
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.util.*
 import kotlin.test.assertEquals
@@ -55,6 +56,7 @@ class ContractUpgradeFlowTest {
     }
 
     @Test
+    @Ignore
     fun `2 parties contract upgrade`() {
         // Create dummy contract.
         val twoPartyDummyContract = DummyContract.generateInitial(0, notary, a.info.legalIdentity.ref(1), b.info.legalIdentity.ref(1))
@@ -115,6 +117,7 @@ class ContractUpgradeFlowTest {
     }
 
     @Test
+    @Ignore
     fun `2 parties contract upgrade using RPC`() {
         rpcDriver(initialiseSerialization = false) {
             // Create dummy contract.

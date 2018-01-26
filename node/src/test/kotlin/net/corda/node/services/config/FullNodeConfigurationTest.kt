@@ -33,7 +33,13 @@ class FullNodeConfigurationTest {
                 notaryNodeAddress = null,
                 notaryClusterAddresses = emptyList(),
                 certificateChainCheckPolicies = emptyList(),
-                devMode = true)
+                devMode = true,
+
+                azureKeyVaultBaseUrl = null,
+                azureKeyVaultApplicationId = null,
+                azureKeyVaultApplicationSecret = null,
+                azureKeyVaultNodeCAKeyName = null
+                )
 
         fun configWithRPCUsername(username: String) {
             testConfiguration.copy(rpcUsers = listOf(User(username, "pass", emptySet())))

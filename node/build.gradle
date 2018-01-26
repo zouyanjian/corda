@@ -93,6 +93,9 @@ dependencies {
     compile project(':client:rpc')
     compile project(':cordform-common')
 
+    compile 'com.microsoft.azure:azure-keyvault:1.0.0'
+    compile group: 'com.microsoft.aad', name: 'adal4j', version: '0.0.2'
+
     compile "com.google.code.findbugs:jsr305:3.0.1"
 
     // Log4J: logging framework (with SLF4J bindings)

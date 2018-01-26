@@ -29,6 +29,11 @@ interface NodeConfiguration : NodeSSLConfiguration {
     val bftReplicaId: Int?
     val notaryNodeAddress: NetworkHostAndPort?
     val notaryClusterAddresses: List<NetworkHostAndPort>
+
+    val azureKeyVaultBaseUrl: String?
+    val azureKeyVaultNodeCAKeyName: String?
+    val azureKeyVaultApplicationId: String?
+    val azureKeyVaultApplicationSecret: String?
 }
 
 data class FullNodeConfiguration(
@@ -62,7 +67,12 @@ data class FullNodeConfiguration(
         override val certificateChainCheckPolicies: List<CertChainPolicyConfig>,
         override val devMode: Boolean = false,
         val useTestClock: Boolean = false,
-        val detectPublicIp: Boolean = true
+        val detectPublicIp: Boolean = true,
+
+        override val azureKeyVaultBaseUrl: String?,
+        override val azureKeyVaultNodeCAKeyName: String?,
+        override val azureKeyVaultApplicationId: String?,
+        override val azureKeyVaultApplicationSecret: String?
 ) : NodeConfiguration {
     /** This is not retrieved from the config file but rather from a command line argument. */
     @Suppress("DEPRECATION")

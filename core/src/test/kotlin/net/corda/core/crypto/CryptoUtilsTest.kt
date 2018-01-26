@@ -34,7 +34,7 @@ class CryptoUtilsTest {
     @Test
     fun `Generate key pairs`() {
         // testing supported algorithms
-        val rsaKeyPair = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val rsaKeyPair = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val ecdsaKKeyPair = Crypto.generateKeyPair(Crypto.ECDSA_SECP256K1_SHA256)
         val ecdsaRKeyPair = Crypto.generateKeyPair(Crypto.ECDSA_SECP256R1_SHA256)
         val eddsaKeyPair = Crypto.generateKeyPair(Crypto.EDDSA_ED25519_SHA512)
@@ -63,11 +63,22 @@ class CryptoUtilsTest {
         }
     }
 
+    @Test
+    fun `RSA_SHA256`() {
+        val keyPair = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
+        val (privKey, pubKey) = keyPair
+        // test for some data
+        val signedData = Crypto.doSign(privKey, testBytes)
+        val verification = Crypto.doVerify(pubKey, signedData, testBytes)
+        assertTrue(verification)
+
+    }
+
     // full process tests
 
     @Test
     fun `RSA full process keygen-sign-verify`() {
-        val keyPair = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val keyPair = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privKey, pubKey) = keyPair
         // test for some data
         val signedData = Crypto.doSign(privKey, testBytes)
@@ -344,7 +355,7 @@ class CryptoUtilsTest {
     @Test
     fun `Check supported algorithms`() {
         val algList: List<String> = Crypto.supportedSignatureSchemes.keys.toList()
-        val expectedAlgSet = setOf("RSA_SHA256", "ECDSA_SECP256K1_SHA256", "ECDSA_SECP256R1_SHA256", "EDDSA_ED25519_SHA512", "SPHINCS-256_SHA512", "COMPOSITE")
+        val expectedAlgSet = setOf("SHA256WithRSA", "ECDSA_SECP256K1_SHA256", "ECDSA_SECP256R1_SHA256", "EDDSA_ED25519_SHA512", "SPHINCS-256_SHA512", "COMPOSITE")
         assertTrue { Sets.symmetricDifference(expectedAlgSet, algList.toSet()).isEmpty(); }
     }
 
@@ -352,7 +363,7 @@ class CryptoUtilsTest {
     @Test
     fun `RSA encode decode keys - required for serialization`() {
         // Generate key pair.
-        val keyPair = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val keyPair = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privKey, pubKey) = keyPair
 
         // Encode and decode private key.
@@ -441,7 +452,7 @@ class CryptoUtilsTest {
 
     @Test
     fun `RSA scheme finder by key type`() {
-        val keyPairRSA = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val keyPairRSA = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privRSA, pubRSA) = keyPairRSA
         assertEquals(privRSA.algorithm, "RSA")
         assertEquals(pubRSA.algorithm, "RSA")
@@ -541,7 +552,7 @@ class CryptoUtilsTest {
 
     @Test
     fun `Automatic RSA key-type detection and decoding`() {
-        val keyPairRSA = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val keyPairRSA = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privRSA, pubRSA) = keyPairRSA
         val encodedPrivRSA = privRSA.encoded
         val encodedPubRSA = pubRSA.encoded

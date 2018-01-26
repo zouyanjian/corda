@@ -172,7 +172,7 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
         val connectionDirection = ConnectionDirection.Inbound(
                 acceptorFactoryClassName = NettyAcceptorFactory::class.java.name
         )
-        val acceptors = mutableSetOf(createTcpTransport(connectionDirection, "0.0.0.0", p2pPort))
+        val acceptors = mutableSetOf(createTcpTransport(connectionDirection, "0.0.0.0", p2pPort, enableSSL = true))
         if (rpcPort != null) {
             acceptors.add(createTcpTransport(connectionDirection, "0.0.0.0", rpcPort, enableSSL = false))
         }
@@ -276,9 +276,9 @@ class ArtemisMessagingServer(override val config: NodeConfiguration,
             "Legal name does not match with our subject CN: ${ourCertificate.subject}"
         }
         val defaultCertPolicies = mapOf(
-                PEER_ROLE to CertificateChainCheckPolicy.RootMustMatch,
-                NODE_ROLE to CertificateChainCheckPolicy.LeafMustMatch,
-                VERIFIER_ROLE to CertificateChainCheckPolicy.RootMustMatch
+                PEER_ROLE to CertificateChainCheckPolicy.Any,
+                NODE_ROLE to CertificateChainCheckPolicy.Any,
+                VERIFIER_ROLE to CertificateChainCheckPolicy.Any
         )
         val certChecks = defaultCertPolicies.mapValues { (role, defaultPolicy) ->
             val configPolicy = config.certificateChainCheckPolicies.noneOrSingle { it.role == role }?.certificateChainCheckPolicy

@@ -170,7 +170,7 @@ fun KeyStore.getSupportedKey(alias: String, keyPassword: String): PrivateKey {
 }
 
 class KeyStoreWrapper(private val storePath: Path, private val storePassword: String) {
-    private val keyStore = storePath.read { loadKeyStore(it, storePassword) }
+    val keyStore = storePath.read { loadKeyStore(it, storePassword) }
 
     private fun createCertificate(serviceName: X500Name, pubKey: PublicKey): CertPath {
         val clientCertPath = keyStore.getCertificateChain(X509Utilities.CORDA_CLIENT_CA)

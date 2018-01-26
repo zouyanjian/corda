@@ -6,6 +6,7 @@ import com.google.common.collect.MutableClassToInstanceMap
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.SettableFuture
+import com.microsoft.azure.keyvault.KeyVaultClient
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner
 import io.github.lukehutch.fastclasspathscanner.scanner.ScanResult
 import net.corda.core.crypto.*
@@ -30,6 +31,7 @@ import net.corda.flows.CashExitFlow
 import net.corda.flows.CashIssueFlow
 import net.corda.flows.CashPaymentFlow
 import net.corda.flows.IssuerFlow
+import net.corda.node.azure.*
 import net.corda.node.services.*
 import net.corda.node.services.api.*
 import net.corda.node.services.config.NodeConfiguration
@@ -65,6 +67,7 @@ import net.corda.node.utilities.*
 import net.corda.node.utilities.AddOrRemove.ADD
 import org.apache.activemq.artemis.utils.ReusableLatch
 import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.cert.X509CertificateHolder
 import org.slf4j.Logger
 import rx.Observable
 import java.io.IOException
@@ -78,6 +81,8 @@ import java.security.KeyPair
 import java.security.KeyStoreException
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.security.PublicKey
+import java.security.cert.*
 import java.time.Clock
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -137,6 +142,8 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     var isPreviousCheckpointsPresent = false
         private set
 
+    var azureKeyVaultHandler: AzureKeyVaultHandler? = null
+
     protected val _networkMapRegistrationFuture: SettableFuture<Unit> = SettableFuture.create()
     /** Completes once the node has successfully registered with the network map service */
     val networkMapRegistrationFuture: ListenableFuture<Unit>
@@ -166,6 +173,26 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
             configuration.configureWithDevSSLCertificate()
         }
         validateKeystore()
+
+        if (configuration.azureKeyVaultBaseUrl != null) {
+            log.info("Using Azure Key Vault '${configuration.azureKeyVaultBaseUrl}' for keys")
+            if (configuration.azureKeyVaultApplicationId == null) {
+                throw ConfigurationException("Missing configuration parameter: azureKeyVaultApplicationId")
+            }
+            if (configuration.azureKeyVaultApplicationSecret == null) {
+                throw ConfigurationException("Missing configuration parameter: azureKeyVaultApplicationSecret")
+            }
+            if (configuration.azureKeyVaultNodeCAKeyName == null) {
+                throw ConfigurationException("Missing configuration parameter: azureKeyVaultNodeCAKeyName")
+            }
+
+            val credentials = AzureKeyVaultCredentials(configuration.azureKeyVaultApplicationId!!, configuration.azureKeyVaultApplicationSecret!!)
+            val azureKeyVaultClient = KeyVaultClient(credentials)
+            val keyStore = KeyStoreWrapper(configuration.trustStoreFile, configuration.trustStorePassword)
+
+            this.azureKeyVaultHandler = AzureKeyVaultHandler(azureKeyVaultClient, configuration.azureKeyVaultBaseUrl!!, configuration.azureKeyVaultNodeCAKeyName!!, keyStore.keyStore)
+        }
+
 
         log.info("Node starting up ...")
 
@@ -237,8 +264,10 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
                 .filter {
                     val serviceType = getServiceType(it)
                     if (serviceType != null && info.serviceIdentities(serviceType).isEmpty()) {
-                        log.debug { "Ignoring ${it.name} as a Corda service since $serviceType is not one of our " +
-                                "advertised services" }
+                        log.debug {
+                            "Ignoring ${it.name} as a Corda service since $serviceType is not one of our " +
+                                    "advertised services"
+                        }
                         false
                     } else {
                         true
@@ -607,8 +636,9 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         val instant = platformClock.instant()
         val expires = instant + NetworkMapService.DEFAULT_EXPIRATION_PERIOD
         val reg = NodeRegistration(info, instant.toEpochMilli(), ADD, expires)
-        val legalIdentityKey = obtainLegalIdentityKey()
-        val request = RegistrationRequest(reg.toWire(services.keyManagementService, legalIdentityKey.public), network.myAddress)
+
+        val legalIdentityKey = obtainLegalIdentityPublicKey()
+        val request = RegistrationRequest(reg.toWire(services.keyManagementService, legalIdentityKey), network.myAddress)
         return network.sendRequest(NetworkMapService.REGISTER_TOPIC, request, networkMapAddress)
     }
 
@@ -623,7 +653,10 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     }
 
     protected open fun makeKeyManagementService(identityService: IdentityService): KeyManagementService {
-        return PersistentKeyManagementService(identityService, partyKeys)
+        if (configuration.azureKeyVaultBaseUrl == null)
+            return PersistentKeyManagementService(identityService, partyKeys)
+        else
+            return AzureKeyManagementService(azureKeyVaultHandler!!, identityService, partyKeys)
     }
 
     open protected fun makeNetworkMapService() {
@@ -689,7 +722,7 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
     protected abstract fun startMessagingService(rpcOps: RPCOps)
 
     protected fun obtainLegalIdentity(): PartyAndCertificate = identityKeyPair.first
-    protected fun obtainLegalIdentityKey(): KeyPair = identityKeyPair.second
+    protected fun obtainLegalIdentityPublicKey(): PublicKey = identityKeyPair.second.public
     private val identityKeyPair by lazy { obtainKeyPair("identity", configuration.myLegalName) }
 
     private fun obtainKeyPair(serviceId: String, serviceName: X500Name): Pair<PartyAndCertificate, KeyPair> {
@@ -700,7 +733,38 @@ abstract class AbstractNode(open val configuration: NodeConfiguration,
         // the legal name is actually validated in some way.
 
         // TODO: Integrate with Key management service?
+        val certFactory = CertificateFactory.getInstance("X509")
         val keyStore = KeyStoreWrapper(configuration.nodeKeystore, configuration.keyStorePassword)
+
+        log.info("Looking key for service $serviceId, serviceName = $serviceName")
+        if (azureKeyVaultHandler != null) {
+            //TODO key store
+            val baseUrl: String = configuration.azureKeyVaultBaseUrl as String
+            // TODO multiple nodes are using the same key!!! fix it
+            log.info("Loading Azure key for '$serviceId' service from '${createAzureKeyIdentifier(baseUrl, normalizeKey(serviceId))}'")
+            val keyPairAndCert: Triple<KeyPair, X509CertificateHolder, CertPath>
+
+            if (keyStore.keyStore.isCertificateEntry(serviceId)) {
+                log.info("Certificate is present")
+                val keyPair = azureKeyVaultHandler!!.getKeyPair(serviceId)
+                val certificate = keyStore.keyStore.getCertificate(serviceId)
+                val certPath = buildCertificatePath(certificate, keyStore.keyStore)
+                keyPairAndCert = Triple(keyPair, X509CertificateHolder(certificate.encoded),certPath)
+            } else {
+                log.info("Generating new certificate")
+                keyPairAndCert = azureKeyVaultHandler!!.createKeyPairAndCertificate(serviceId, serviceName)
+            }
+
+            val loadedServiceName = keyPairAndCert.second.subject
+            if (loadedServiceName != serviceName) {
+                throw ConfigurationException("The legal name in the config file doesn't match the stored identity keystore:" +
+                        "$serviceName vs $loadedServiceName")
+            }
+            partyKeys += keyPairAndCert.first
+            return Pair(PartyAndCertificate(loadedServiceName, keyPairAndCert.first.public, keyPairAndCert.second, keyPairAndCert.third), keyPairAndCert.first)
+        }
+
+        // TODO: Integrate with Key management service?
         val privateKeyAlias = "$serviceId-private-key"
         val compositeKeyAlias = "$serviceId-composite-key"
 

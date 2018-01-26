@@ -282,7 +282,7 @@ class CompositeKeyTests : TestDependencyInjectionBase() {
 
     @Test
     fun `CompositeKey from multiple signature schemes and signature verification`() {
-        val (privRSA, pubRSA) = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val (privRSA, pubRSA) = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privK1, pubK1) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256K1_SHA256)
         val (privR1, pubR1) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256R1_SHA256)
         val (privEd, pubEd) = Crypto.generateKeyPair(Crypto.EDDSA_ED25519_SHA512)
@@ -307,7 +307,7 @@ class CompositeKeyTests : TestDependencyInjectionBase() {
     @Test
     fun `Test save to keystore`() {
         // From test case [CompositeKey from multiple signature schemes and signature verification]
-        val (privRSA, pubRSA) = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val (privRSA, pubRSA) = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (privK1, pubK1) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256K1_SHA256)
         val (privR1, pubR1) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256R1_SHA256)
         val (privEd, pubEd) = Crypto.generateKeyPair(Crypto.EDDSA_ED25519_SHA512)
@@ -361,7 +361,7 @@ class CompositeKeyTests : TestDependencyInjectionBase() {
     fun `CompositeKey deterministic children sorting`() {
         val (_, pub1) = Crypto.generateKeyPair(Crypto.EDDSA_ED25519_SHA512)
         val (_, pub2) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256K1_SHA256)
-        val (_, pub3) = Crypto.generateKeyPair(Crypto.RSA_SHA256)
+        val (_, pub3) = Crypto.generateKeyPair(Crypto.SHA256WithRSA)
         val (_, pub4) = Crypto.generateKeyPair(Crypto.EDDSA_ED25519_SHA512)
         val (_, pub5) = Crypto.generateKeyPair(Crypto.ECDSA_SECP256R1_SHA256)
         val (_, pub6) = Crypto.generateKeyPair(Crypto.SPHINCS256_SHA256)
