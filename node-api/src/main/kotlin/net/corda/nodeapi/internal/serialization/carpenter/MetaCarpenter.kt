@@ -29,6 +29,7 @@ data class CarpenterMetaSchema(
         val dependsOn: MutableMap<String, MutableList<String>>) {
     companion object CarpenterSchemaConstructor {
         fun newInstance(): CarpenterMetaSchema {
+            println ("\nCREATING META CARPENTER SCHEMA")
             return CarpenterMetaSchema(mutableListOf(), mutableMapOf(), mutableMapOf())
         }
     }
@@ -45,7 +46,7 @@ data class CarpenterMetaSchema(
     fun isNotEmpty() = carpenterSchemas.isNotEmpty()
 
     // We could make this an abstract method on TypeNotation but that
-    // would mean the amqp package being "more" infected with carpenter
+    // would mean the AMQP package being "more" infected with carpenter
     // specific bits.
     fun buildFor(target: TypeNotation, cl: ClassLoader) = when (target) {
         is RestrictedType -> target.carpenterSchema(this)
@@ -55,7 +56,7 @@ data class CarpenterMetaSchema(
 
 /**
  * Take a dependency tree of [CarpenterMetaSchema] and reduce it to zero by carpenting those classes that
- * require it. As classes are carpented check for depdency resolution, if now free generate a [Schema] for
+ * require it. As classes are carpented check for dependency resolution, if now free generate a [Schema] for
  * that class and add it to the list of classes ([CarpenterMetaSchema.carpenterSchemas]) that require
  * carpenting
  *

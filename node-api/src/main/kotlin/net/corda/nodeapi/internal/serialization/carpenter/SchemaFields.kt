@@ -132,6 +132,8 @@ class EnumField : Field(Enum::class.java) {
  * the AMQP schema indicates it's mandatory (non nullable) or not (nullable)
  */
 object FieldFactory {
-    fun newInstance(mandatory: Boolean, name: String, field: Class<out Any?>) =
-            if (mandatory) NonNullableField(name, field) else NullableField(name, field)
+    fun newInstance(mandatory: Boolean, name: String, field: Class<out Any?>) : Field {
+        println ("FieldFactory: newInstance - $name $field")
+        return if (mandatory) NonNullableField(name, field) else NullableField(name, field)
+    }
 }
