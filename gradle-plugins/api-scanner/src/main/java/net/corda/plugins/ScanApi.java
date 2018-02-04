@@ -1,6 +1,7 @@
 package net.corda.plugins;
 
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.lukehutch.fastclasspathscanner.scanner.AnnotationInfo;
 import io.github.lukehutch.fastclasspathscanner.scanner.ClassInfo;
 import io.github.lukehutch.fastclasspathscanner.scanner.FieldInfo;
 import io.github.lukehutch.fastclasspathscanner.scanner.MethodInfo;
@@ -336,19 +337,23 @@ public class ScanApi extends DefaultTask {
 
         private MethodInfo filterAnnotationsFor(MethodInfo method) {
             return new MethodInfo(
-                method.getClassName(),
-                method.getMethodName(),
-                method.getAccessFlags(),
-                method.getTypeDescriptor(),
-                method.getAnnotationNames().stream()
-                    .filter(ScanApi::isVisibleAnnotation)
-                    .collect(toList())
+                    method.getClassName(),
+                    method.getMethodName(),
+                    method.getAccessFlags(),
+                    method.getTypeDescriptorInternal(),
+                    method.getTypeDescriptor(),
+                    method.getParameterNames(),
+                    method.getParameterAccessFlagsInternal(),
+                    method.getAnnotationInfo().stream()
+                            .filter(ScanApi::isVisibleAnnotation)
+                            .collect(toList()),
+                    method.getParameterAnnotationInfo()
             );
         }
     }
 
-    private static boolean isVisibleAnnotation(String annotationName) {
-        return !ANNOTATION_BLACKLIST.contains(annotationName);
+    private static boolean isVisibleAnnotation(AnnotationInfo annotation) {
+        return !ANNOTATION_BLACKLIST.contains(annotation.getAnnotationName());
     }
 
     private static boolean isKotlinInternalScope(MethodInfo method) {

@@ -5,12 +5,13 @@ apply plugin: 'com.jfrog.artifactory'
 description "Generates a summary of the artifact's public API"
 
 repositories {
+	mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     compile gradleApi()
-    compile "io.github.lukehutch:fast-classpath-scanner:2.7.0"
+    compile "io.github.lukehutch:fast-classpath-scanner:2.12.5-SNAPSHOT"
     testCompile "junit:junit:4.12"
 }
 
