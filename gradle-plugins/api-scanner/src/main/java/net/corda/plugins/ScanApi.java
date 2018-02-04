@@ -221,6 +221,13 @@ public class ScanApi extends DefaultTask {
                     return;
                 }
 
+                if (classInfo.isAnonymousInnerClass()) {
+                    // Exclude anonymous inner classes, they aren't visible and so don't form part of the Api.
+                    System.out.println("Ignoring anonymous inner class " + classInfo.getClassName());
+                    return;
+                }
+
+                System.out.println("Writing class: " + classInfo.getClassName());
                 writeClass(writer, classInfo, javaClass.getModifiers());
                 writeMethods(writer, classInfo.getMethodAndConstructorInfo());
                 writeFields(writer, classInfo.getFieldInfo());
@@ -277,7 +284,9 @@ public class ScanApi extends DefaultTask {
                 if (isVisible(method.getAccessFlags()) // Only public and protected methods
                         && isValid(method.getAccessFlags(), METHOD_MASK) // Excludes bridge and synthetic methods
                         && !isKotlinInternalScope(method)) {
-                    writer.append("  ").println(filterAnnotationsFor(method));
+                    //writer.append("  ").println(filterAnnotationsFor(method));
+                    System.out.println("New version:");
+                    writer.append("  ").println(method);
                 }
             }
         }
