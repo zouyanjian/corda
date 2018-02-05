@@ -106,6 +106,7 @@ fun <A> rpcDriver(
         notarySpecs: List<NotarySpec> = emptyList(),
         externalTrace: Trace? = null,
         jmxPolicy: JmxPolicy = JmxPolicy(),
+        inMemoryDB: Boolean = true,
         dsl: RPCDriverDSL.() -> A
 ) : A {
     return genericDriver(
@@ -122,6 +123,7 @@ fun <A> rpcDriver(
                             extraCordappPackagesToScan = extraCordappPackagesToScan,
                             notarySpecs = notarySpecs,
                             jmxPolicy = jmxPolicy,
+                            inMemoryDB = inMemoryDB,
                             compatibilityZone = null
                     ), externalTrace
             ),

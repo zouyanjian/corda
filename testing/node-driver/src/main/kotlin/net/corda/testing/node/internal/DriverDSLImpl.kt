@@ -87,7 +87,8 @@ class DriverDSLImpl(
         extraCordappPackagesToScan: List<String>,
         val jmxPolicy: JmxPolicy,
         val notarySpecs: List<NotarySpec>,
-        val compatibilityZone: CompatibilityZoneParams?
+        val compatibilityZone: CompatibilityZoneParams?,
+        val inMemoryDB: Boolean
 ) : InternalDriverDSL {
     private var _executorService: ScheduledExecutorService? = null
     val executorService get() = _executorService!!
@@ -104,6 +105,16 @@ class DriverDSLImpl(
     private lateinit var networkMapAvailability: CordaFuture<LocalNetworkMap?>
     private lateinit var _notaries: CordaFuture<List<NotaryHandle>>
     override val notaryHandles: List<NotaryHandle> get() = _notaries.getOrThrow()
+
+    // While starting with inProcess mode, we need to have different names to avoid clashes
+    private var inMemoryCounter = 0
+    private fun getInMemoryConfig() = if (inMemoryDB) {
+        mapOf("dataSourceProperties" to mapOf(
+                "dataSource.url" to "jdbc:h2:mem:persistence${inMemoryCounter++};DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=100"
+        ))
+    } else {
+        emptyMap()
+    }
 
     class State {
         val processes = ArrayList<Process>()
@@ -221,7 +232,7 @@ class DriverDSLImpl(
                         "useTestClock" to useTestClock,
                         "rpcUsers" to if (users.isEmpty()) defaultRpcUserList else users.map { it.toConfig().root().unwrapped() },
                         "verifierType" to verifierType.name
-                ) + czUrlConfig + customOverrides
+                ) + czUrlConfig + customOverrides + getInMemoryConfig()
         ))
         return startNodeInternal(config, webAddress, startInSameProcess, maximumHeapSize, localNetworkMap)
     }
@@ -234,8 +245,8 @@ class DriverDSLImpl(
                 configOverrides = configOf(
                         "p2pAddress" to "localhost:1222", // required argument, not really used
                         "compatibilityZoneURL" to compatibilityZoneURL.toString(),
-                        "myLegalName" to providedName.toString())
-        ))
+                        "myLegalName" to providedName.toString()
+        )+getInMemoryConfig()))
 
         config.corda.certificatesDirectory.createDirectories()
         // Create network root truststore.
@@ -349,7 +360,7 @@ class DriverDSLImpl(
                 configOverrides = cordform.config + rpcAddress + notary + mapOf(
                         "rpcUsers" to if (rpcUsers.isEmpty()) defaultRpcUserList else rpcUsers
                 )
-        ))
+        )+getInMemoryConfig())
         return startNodeInternal(config, webAddress, null, "200m", localNetworkMap)
     }
 
@@ -949,6 +960,7 @@ fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
         startNodesInProcess: Boolean = defaultParameters.startNodesInProcess,
         notarySpecs: List<NotarySpec>,
         extraCordappPackagesToScan: List<String> = defaultParameters.extraCordappPackagesToScan,
+        inMemoryDB: Boolean = defaultParameters.inMemoryDB,
         jmxPolicy: JmxPolicy = JmxPolicy(),
         driverDslWrapper: (DriverDSLImpl) -> D,
         coerce: (D) -> DI, dsl: DI.() -> A
@@ -967,7 +979,8 @@ fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
                     extraCordappPackagesToScan = extraCordappPackagesToScan,
                     jmxPolicy = jmxPolicy,
                     notarySpecs = notarySpecs,
-                    compatibilityZone = null
+                    compatibilityZone = null,
+                    inMemoryDB = inMemoryDB
             )
     )
     val shutdownHook = addShutdownHook(driverDsl::shutdown)
@@ -1009,6 +1022,7 @@ fun <A> internalDriver(
         notarySpecs: List<NotarySpec> = DriverParameters().notarySpecs,
         extraCordappPackagesToScan: List<String> = DriverParameters().extraCordappPackagesToScan,
         jmxPolicy: JmxPolicy = DriverParameters().jmxPolicy,
+        inMemoryDB: Boolean = DriverParameters().inMemoryDB,
         compatibilityZone: CompatibilityZoneParams? = null,
         dsl: DriverDSLImpl.() -> A
 ): A {
@@ -1025,6 +1039,7 @@ fun <A> internalDriver(
                     notarySpecs = notarySpecs,
                     extraCordappPackagesToScan = extraCordappPackagesToScan,
                     jmxPolicy = jmxPolicy,
+                    inMemoryDB = inMemoryDB,
                     compatibilityZone = compatibilityZone
             ),
             coerce = { it },

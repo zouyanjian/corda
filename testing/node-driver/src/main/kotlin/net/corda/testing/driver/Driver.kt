@@ -197,6 +197,7 @@ fun <A> driver(
         waitForAllNodesToFinish: Boolean = defaultParameters.waitForAllNodesToFinish,
         notarySpecs: List<NotarySpec> = defaultParameters.notarySpecs,
         extraCordappPackagesToScan: List<String> = defaultParameters.extraCordappPackagesToScan,
+        inMemoryDB: Boolean = defaultParameters.inMemoryDB,
         jmxPolicy: JmxPolicy = defaultParameters.jmxPolicy,
         dsl: DriverDSL.() -> A
 ): A {
@@ -213,7 +214,8 @@ fun <A> driver(
                     notarySpecs = notarySpecs,
                     extraCordappPackagesToScan = extraCordappPackagesToScan,
                     jmxPolicy = jmxPolicy,
-                    compatibilityZone = null
+                    compatibilityZone = null,
+                    inMemoryDB = inMemoryDB
             ),
             coerce = { it },
             dsl = dsl,
@@ -249,6 +251,7 @@ data class DriverParameters(
         val waitForAllNodesToFinish: Boolean = false,
         val notarySpecs: List<NotarySpec> = listOf(NotarySpec(DUMMY_NOTARY_NAME)),
         val extraCordappPackagesToScan: List<String> = emptyList(),
+        val inMemoryDB: Boolean = true,
         val jmxPolicy: JmxPolicy = JmxPolicy()
 ) {
     fun setIsDebug(isDebug: Boolean) = copy(isDebug = isDebug)
@@ -262,5 +265,6 @@ data class DriverParameters(
     fun setWaitForAllNodesToFinish(waitForAllNodesToFinish: Boolean) = copy(waitForAllNodesToFinish = waitForAllNodesToFinish)
     fun setNotarySpecs(notarySpecs: List<NotarySpec>) = copy(notarySpecs = notarySpecs)
     fun setExtraCordappPackagesToScan(extraCordappPackagesToScan: List<String>) = copy(extraCordappPackagesToScan = extraCordappPackagesToScan)
+    fun setInMemoryDB(inMemoryDB: Boolean) = copy(inMemoryDB = inMemoryDB)
     fun setJmxPolicy(jmxPolicy: JmxPolicy) = copy(jmxPolicy = jmxPolicy)
 }
