@@ -7,7 +7,8 @@ buildscript {
     ext.corda_release_version = "3.0-SNAPSHOT"
     // Increment this on any release that changes public APIs anywhere in the Corda platform
     ext.corda_platform_version = constants.getProperty("platformVersion")
-    ext.gradle_plugins_version = constants.getProperty("gradlePluginsVersion")
+    // From repo: github.com/corda/corda-gradle-plugins. Published to bintray.com/r3/corda
+    ext.gradle_plugins_version = '3.0.5'
 
     // Dependency versions. Can run 'gradle dependencyUpdates' to find new versions of things.
     //
