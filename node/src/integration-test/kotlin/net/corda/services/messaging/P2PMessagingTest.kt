@@ -11,6 +11,7 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.minutes
 import net.corda.core.utilities.seconds
 import net.corda.node.internal.Node
 import net.corda.node.internal.StartedNode
@@ -108,14 +109,14 @@ class P2PMessagingTest {
 
             // Restart the node and expect a response
             val aliceRestarted = startAlice()
-            val response = aliceRestarted.network.onNext<Any>(dummyTopic, sessionId).getOrThrow()
+            val response = aliceRestarted.network.onNext<Any>(dummyTopic, sessionId).getOrThrow(1.minutes)
             assertThat(crashingNodes.requestsReceived.get()).isGreaterThan(numberOfRequestsReceived)
             assertThat(response).isEqualTo(responseMessage)
         }
     }
 
     private fun startDriverWithDistributedService(dsl: DriverDSL.(List<StartedNode<Node>>) -> Unit) {
-        driver(startNodesInProcess = true, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2)))) {
+        driver(startNodesInProcess = true, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2))), inMemoryDB = true) {
             dsl(defaultNotaryHandle.nodeHandles.getOrThrow().map { (it as NodeHandle.InProcess).node })
         }
     }

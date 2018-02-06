@@ -61,6 +61,7 @@ fun <A> verifierDriver(
         extraCordappPackagesToScan: List<String> = emptyList(),
         notarySpecs: List<NotarySpec> = emptyList(),
         jmxPolicy: JmxPolicy = JmxPolicy(),
+        inMemoryDB: Boolean = true,
         dsl: VerifierDriverDSL.() -> A
 ) = genericDriver(
         driverDsl = VerifierDriverDSL(
@@ -76,7 +77,8 @@ fun <A> verifierDriver(
                         extraCordappPackagesToScan = extraCordappPackagesToScan,
                         notarySpecs = notarySpecs,
                         jmxPolicy = jmxPolicy,
-                        compatibilityZone = null
+                        compatibilityZone = null,
+                        inMemoryDB = inMemoryDB
                 )
         ),
         coerce = { it },
