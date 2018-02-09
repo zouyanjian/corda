@@ -41,7 +41,7 @@ class NodeStatePersistenceTests {
 
         val user = User("mark", "dadada", setOf(startFlow<SendMessageFlow>(), invokeRpc("vaultQuery")))
         val message = Message("Hello world!")
-        val stateAndRef: StateAndRef<MessageState>? = driver(isDebug = true, startNodesInProcess = isQuasarAgentSpecified(), portAllocation = PortAllocation.RandomFree) {
+        val stateAndRef: StateAndRef<MessageState>? = driver(isDebug = true, inMemoryDB = false, startNodesInProcess = isQuasarAgentSpecified(), portAllocation = PortAllocation.RandomFree) {
             val nodeName = {
                 val nodeHandle = startNode(rpcUsers = listOf(user)).getOrThrow()
                 val nodeName = nodeHandle.nodeInfo.chooseIdentity().name
@@ -75,7 +75,7 @@ class NodeStatePersistenceTests {
 
         val user = User("mark", "dadada", setOf(startFlow<SendMessageFlow>(), invokeRpc("vaultQuery")))
         val message = Message("Hello world!")
-        val stateAndRef: StateAndRef<MessageState>? = driver(isDebug = true, startNodesInProcess = isQuasarAgentSpecified(), portAllocation = PortAllocation.RandomFree) {
+        val stateAndRef: StateAndRef<MessageState>? = driver(isDebug = true, inMemoryDB = false, startNodesInProcess = isQuasarAgentSpecified(), portAllocation = PortAllocation.RandomFree) {
             val nodeName = {
                 val nodeHandle = startNode(rpcUsers = listOf(user)).getOrThrow()
                 val nodeName = nodeHandle.nodeInfo.chooseIdentity().name

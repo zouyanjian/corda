@@ -77,7 +77,7 @@ class P2PMessagingTest {
 
     @Test
     fun `distributed service request retries are persisted across client node restarts`() {
-        startDriverWithDistributedService { distributedServiceNodes ->
+        startDriverWithDistributedService(inMemoryDB = false) { distributedServiceNodes ->
             val alice = startAlice()
             val serviceAddress = alice.services.networkMapCache.run {
                 val notaryParty = notaryIdentities.randomOrNull()!!
@@ -115,8 +115,8 @@ class P2PMessagingTest {
         }
     }
 
-    private fun startDriverWithDistributedService(dsl: DriverDSL.(List<StartedNode<Node>>) -> Unit) {
-        driver(startNodesInProcess = true, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2))), inMemoryDB = true) {
+    private fun startDriverWithDistributedService(inMemoryDB: Boolean = true, dsl: DriverDSL.(List<StartedNode<Node>>) -> Unit) {
+        driver(startNodesInProcess = true, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2))), inMemoryDB = inMemoryDB) {
             dsl(defaultNotaryHandle.nodeHandles.getOrThrow().map { (it as NodeHandle.InProcess).node })
         }
     }
