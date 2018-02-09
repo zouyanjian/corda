@@ -125,7 +125,7 @@ fun <A> rpcDriver(
                             notarySpecs = notarySpecs,
                             jmxPolicy = jmxPolicy,
                             compatibilityZone = null,
-                            maxTransactionSize = maxTransactionSize
+                            maxTransactionSize = maxTransactionSize,
                             inMemoryDB = inMemoryDB
                     ), externalTrace
             ),
