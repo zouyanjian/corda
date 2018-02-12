@@ -117,6 +117,7 @@ class DriverDSLImpl(
                 "dataSource.url" to "jdbc:h2:mem:persistence${inMemoryCounter++};DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=100"
         ))
     } else {
+        // Do not override DB settings, use node defaults (H2 file)
         emptyMap()
     }
 
