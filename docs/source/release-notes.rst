@@ -219,6 +219,7 @@ Minor Changes
   * Pluggable serializer framework for external classes. A number of examples are provided by the SIMM Valuation Demo in
     ``samples/simm-valuation-demo/src/main/kotlin/net/corda/vega/plugin/customserializers``
   * Numerous bug fixes and documentation tweaks
+  * Removed dependency on Jolokia WAR file
 
 Release 2.0
 -----------
