@@ -3,7 +3,8 @@ package net.corda.node.modes.draining
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.internal.concurrent.map
+import net.corda.core.internal.concurrent.OpenFuture
+import net.corda.core.internal.concurrent.openFuture
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.loggerFor
@@ -19,7 +20,6 @@ import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.test.fail
 
 class P2PFlowsDrainingModeTest {
 
@@ -31,6 +31,7 @@ class P2PFlowsDrainingModeTest {
 
     companion object {
         private val logger = loggerFor<P2PFlowsDrainingModeTest>()
+        private val sendCompletes = HashMap<Party, OpenFuture<Unit>>()
     }
 
     @Before
@@ -46,7 +47,7 @@ class P2PFlowsDrainingModeTest {
     @Test
     fun `flows draining mode suspends consumption of initial session messages`() {
 
-        driver(isDebug = true, startNodesInProcess = false, portAllocation = portAllocation) {
+        driver(isDebug = true, startNodesInProcess = true, portAllocation = portAllocation) {
             val initiatedNode = startNode().getOrThrow()
             val initiating = startNode(rpcUsers = users).getOrThrow().rpc
             val counterParty = initiatedNode.nodeInfo.chooseIdentity()
@@ -54,22 +55,16 @@ class P2PFlowsDrainingModeTest {
 
             initiated.setFlowsDrainingModeEnabled(true)
 
-            var shouldFail = true
             initiating.apply {
+                val sendComplete = openFuture<Unit>()
+                sendCompletes[counterParty] = sendComplete
                 val flow = startFlow(::InitiateSessionFlow, counterParty)
-                // this should be really fast, for the flow has already started, so 5 seconds should never be a problem
-                executor!!.submit({
-                    logger.info("Now disabling flows draining mode for $counterParty.")
-                    shouldFail = false
-                    initiated.setFlowsDrainingModeEnabled(false)
-                })
-                flow.returnValue.map { result ->
-                    if (shouldFail) {
-                        fail("Shouldn't happen until flows draining mode is switched off.")
-                    } else {
-                        assertThat(result).isEqualTo("Hi there answer")
-                    }
-                }.getOrThrow()
+                sendComplete.get()
+                require(!flow.returnValue.isDone) { "Flow should not be finished" }
+                logger.info("Now disabling flows draining mode for $counterParty.")
+                initiated.setFlowsDrainingModeEnabled(false)
+                val result = flow.returnValue.getOrThrow()
+                assertThat(result).isEqualTo("Hi there answer")
             }
         }
     }
@@ -83,6 +78,7 @@ class P2PFlowsDrainingModeTest {
 
             val session = initiateFlow(counterParty)
             session.send("Hi there")
+            sendCompletes[counterParty]?.set(Unit)
             return session.receive<String>().unwrap { it }
         }
     }
