@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import org.junit.Test
 import org.apache.qpid.proton.amqp.Symbol
 import org.assertj.core.api.Assertions
-import org.junit.Ignore
 import java.io.NotSerializableException
 import java.util.concurrent.ConcurrentHashMap
 
@@ -69,7 +68,6 @@ class PrivatePropertyTests {
     }
 
     @Test
-    @Ignore
     fun testWithInheritance() {
         open class B(val a: String, protected val b: String)
         class D (a: String, b: String) : B (a, b) {
