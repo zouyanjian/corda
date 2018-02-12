@@ -112,7 +112,7 @@ class DriverDSLImpl(
 
     // While starting with inProcess mode, we need to have different names to avoid clashes
     private var inMemoryCounter = 0
-    private fun getInMemoryConfig() = if (inMemoryDB) {
+    private fun getDatabaseConfig() = if (inMemoryDB) {
         mapOf("dataSourceProperties" to mapOf(
                 "dataSource.url" to "jdbc:h2:mem:persistence${inMemoryCounter++};DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;WRITE_DELAY=100"
         ))
@@ -236,7 +236,7 @@ class DriverDSLImpl(
                         "useTestClock" to useTestClock,
                         "rpcUsers" to if (users.isEmpty()) defaultRpcUserList else users.map { it.toConfig().root().unwrapped() },
                         "verifierType" to verifierType.name
-                ) + czUrlConfig + customOverrides + getInMemoryConfig()
+                ) + czUrlConfig + customOverrides + getDatabaseConfig()
         ))
         return startNodeInternal(config, webAddress, startInSameProcess, maximumHeapSize, localNetworkMap)
     }
@@ -250,7 +250,7 @@ class DriverDSLImpl(
                         "p2pAddress" to "localhost:1222", // required argument, not really used
                         "compatibilityZoneURL" to compatibilityZoneURL.toString(),
                         "myLegalName" to providedName.toString()
-        )+getInMemoryConfig()))
+        )+ getDatabaseConfig()))
 
         config.corda.certificatesDirectory.createDirectories()
         // Create network root truststore.
@@ -364,7 +364,7 @@ class DriverDSLImpl(
                 configOverrides = cordform.config + rpcAddress + notary + mapOf(
                         "rpcUsers" to if (rpcUsers.isEmpty()) defaultRpcUserList else rpcUsers
                 )
-        )+getInMemoryConfig())
+        )+ getDatabaseConfig())
         return startNodeInternal(config, webAddress, null, "200m", localNetworkMap)
     }
 
