@@ -112,8 +112,8 @@ class P2PMessagingTest {
 
 
     private fun startDriverWithDistributedService(inMemoryDB: Boolean = true, dsl: DriverDSL.(List<InProcess>) -> Unit) {
-        driver(startNodesInProcess = true, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2)))) {
-            dsl(defaultNotaryHandle.nodeHandles.getOrThrow().map { (it as InProcess) }, inMemoryDB = `in`())
+        driver(startNodesInProcess = true, inMemoryDB = inMemoryDB, notarySpecs = listOf(NotarySpec(DISTRIBUTED_SERVICE_NAME, cluster = ClusterSpec.Raft(clusterSize = 2)))) {
+            dsl(defaultNotaryHandle.nodeHandles.getOrThrow().map { (it as InProcess) })
         }
     }
 
