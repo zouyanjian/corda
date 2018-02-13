@@ -86,7 +86,7 @@ class DriverDSLImpl(
         val useTestClock: Boolean,
         val isDebug: Boolean,
         val startNodesInProcess: Boolean,
-        val waitForNodesToFinish: Boolean,
+        val waitForAllNodesToFinish: Boolean,
         extraCordappPackagesToScan: List<String>,
         val jmxPolicy: JmxPolicy,
         val notarySpecs: List<NotarySpec>,
@@ -150,7 +150,7 @@ class DriverDSLImpl(
     }
 
     override fun shutdown() {
-        if (waitForNodesToFinish) {
+        if (waitForAllNodesToFinish) {
             state.locked {
                 processes.forEach { it.waitFor() }
             }
@@ -171,7 +171,7 @@ class DriverDSLImpl(
                 config.corda.rpcUsers[0].run { client.start(username, password) }
             } catch (e: Exception) {
                 if (processDeathFuture.isDone) throw e
-                log.error("Exception while connecting to RPC, retrying to connect at $rpcAddress", e)
+                log.info("Exception while connecting to RPC, retrying to connect at $rpcAddress", e)
                 null
             }
         }
@@ -677,7 +677,7 @@ class DriverDSLImpl(
             val debugPort = if (isDebug) debugPortAllocation.nextPort() else null
             val monitorPort = if (jmxPolicy.startJmxHttpServer) jmxPolicy.jmxHttpServerPortAllocation?.nextPort() else null
             val process = startOutOfProcessNode(config, quasarJarPath, debugPort, jolokiaJarPath, monitorPort, systemProperties, cordappPackages, maximumHeapSize)
-            if (waitForNodesToFinish) {
+            if (waitForAllNodesToFinish) {
                 state.locked {
                     processes += process
                 }
@@ -959,40 +959,26 @@ fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
  */
 fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
         defaultParameters: DriverParameters = DriverParameters(),
-        isDebug: Boolean = defaultParameters.isDebug,
-        driverDirectory: Path = defaultParameters.driverDirectory,
-        portAllocation: PortAllocation = defaultParameters.portAllocation,
-        debugPortAllocation: PortAllocation = defaultParameters.debugPortAllocation,
-        systemProperties: Map<String, String> = defaultParameters.systemProperties,
-        useTestClock: Boolean = defaultParameters.useTestClock,
-        initialiseSerialization: Boolean = defaultParameters.initialiseSerialization,
-        waitForNodesToFinish: Boolean = defaultParameters.waitForAllNodesToFinish,
-        startNodesInProcess: Boolean = defaultParameters.startNodesInProcess,
-        notarySpecs: List<NotarySpec>,
-        extraCordappPackagesToScan: List<String> = defaultParameters.extraCordappPackagesToScan,
-        inMemoryDB: Boolean = defaultParameters.inMemoryDB,
-        jmxPolicy: JmxPolicy = JmxPolicy(),
-        maxTransactionSize: Int,
         driverDslWrapper: (DriverDSLImpl) -> D,
         coerce: (D) -> DI, dsl: DI.() -> A
 ): A {
-    val serializationEnv = setGlobalSerialization(initialiseSerialization)
+    val serializationEnv = setGlobalSerialization(defaultParameters.initialiseSerialization)
     val driverDsl = driverDslWrapper(
             DriverDSLImpl(
-                    portAllocation = portAllocation,
-                    debugPortAllocation = debugPortAllocation,
-                    systemProperties = systemProperties,
-                    driverDirectory = driverDirectory.toAbsolutePath(),
-                    useTestClock = useTestClock,
-                    isDebug = isDebug,
-                    startNodesInProcess = startNodesInProcess,
-                    waitForNodesToFinish = waitForNodesToFinish,
-                    extraCordappPackagesToScan = extraCordappPackagesToScan,
-                    jmxPolicy = jmxPolicy,
-                    notarySpecs = notarySpecs,
+                    portAllocation = defaultParameters.portAllocation,
+                    debugPortAllocation = defaultParameters.debugPortAllocation,
+                    systemProperties = defaultParameters.systemProperties,
+                    driverDirectory = defaultParameters.driverDirectory.toAbsolutePath(),
+                    useTestClock = defaultParameters.useTestClock,
+                    isDebug = defaultParameters.isDebug,
+                    startNodesInProcess = defaultParameters.startNodesInProcess,
+                    waitForAllNodesToFinish = defaultParameters.waitForAllNodesToFinish,
+                    extraCordappPackagesToScan = defaultParameters.extraCordappPackagesToScan,
+                    jmxPolicy = defaultParameters.jmxPolicy,
+                    notarySpecs = defaultParameters.notarySpecs,
                     compatibilityZone = null,
-                    inMemoryDB = inMemoryDB,
-                    maxTransactionSize = maxTransactionSize
+                    inMemoryDB = defaultParameters.inMemoryDB,
+                    maxTransactionSize = defaultParameters.maxTransactionSize
             )
     )
     val shutdownHook = addShutdownHook(driverDsl::shutdown)
@@ -1048,7 +1034,7 @@ fun <A> internalDriver(
                     useTestClock = useTestClock,
                     isDebug = isDebug,
                     startNodesInProcess = startNodesInProcess,
-                    waitForNodesToFinish = waitForAllNodesToFinish,
+                    waitForAllNodesToFinish = waitForAllNodesToFinish,
                     notarySpecs = notarySpecs,
                     extraCordappPackagesToScan = extraCordappPackagesToScan,
                     jmxPolicy = jmxPolicy,
