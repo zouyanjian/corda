@@ -14,18 +14,16 @@ dependencies {
 }
 
 /**
- * Run this at the command line to execute from within gradle
+ * To run from within gradle use
+ *      ./gradlew -PrunArgs="<cmd> <line> <args>" :tools:blobinspector:run
  *
- * ./gradlew :tools:blobinspector:run
+ * at the command line.
  */
 run {
-//    if (project.hasProperty('loadtest-config')) {
-//        args project["loadtest-config"]
-//    }
-//    System.properties.forEach { k, v ->
-//        if (k.toString().startsWith("loadtest."))
-//            systemProperty k, v
-//    }
+    if (project.hasProperty('runArgs')) {
+        args = [ project.findProperty('runArgs') ]
+    }
+
     if (System.properties.getProperty('consoleLogLevel') != null) {
         logging.captureStandardOutput(LogLevel.valueOf(System.properties.getProperty('consoleLogLevel')))
         logging.captureStandardError(LogLevel.valueOf(System.properties.getProperty('consoleLogLevel')))

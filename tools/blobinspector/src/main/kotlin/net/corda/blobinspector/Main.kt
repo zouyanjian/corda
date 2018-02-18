@@ -19,8 +19,7 @@ fun main(args: Array<String>) {
 
     try {
         cmd = parser.parse(options, args)
-    } catch (e: ParseException) {
-        System.out.println(e.message)
+    } catch (e: org.apache.commons.cli.ParseException) {
         formatter.printHelp("blobinspector", options)
 
         System.exit(1)
