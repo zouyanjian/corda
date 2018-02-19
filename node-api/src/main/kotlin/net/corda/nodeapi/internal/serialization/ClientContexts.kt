@@ -19,6 +19,7 @@ val KRYO_RPC_CLIENT_CONTEXT = SerializationContextImpl(kryoMagic,
         emptyMap(),
         true,
         SerializationContext.UseCase.RPCClient)
+
 val AMQP_RPC_CLIENT_CONTEXT = SerializationContextImpl(amqpMagic,
         SerializationDefaults.javaClass.classLoader,
         GlobalTransientClassWhiteList(BuiltInExceptionsWhitelist()),
