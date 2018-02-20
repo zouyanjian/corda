@@ -1,6 +1,6 @@
 package net.corda.client.rpc
 
-import net.corda.client.rpc.internal.KryoClientSerializationScheme
+import net.corda.client.rpc.internal.AMQPClientSerializationScheme
 import net.corda.client.rpc.internal.RPCClient
 import net.corda.client.rpc.internal.RPCClientConfiguration
 import net.corda.core.context.Actor
@@ -96,7 +96,7 @@ class CordaRPCClient private constructor(
             effectiveSerializationEnv
         } catch (e: IllegalStateException) {
             try {
-                KryoClientSerializationScheme.initialiseSerialization()
+                AMQPClientSerializationScheme.initialiseSerialization()
             } catch (e: IllegalStateException) {
                 // Race e.g. two of these constructed in parallel, ignore.
             }
