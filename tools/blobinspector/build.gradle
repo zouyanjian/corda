@@ -11,6 +11,8 @@ mainClassName = 'net.corda.blobinspector.MainKt'
 dependencies {
     compile project(':node-api')
     compile "commons-cli:commons-cli:$commons_cli_version"
+
+    testCompile "junit:junit:$junit_version"
 }
 
 /**
@@ -21,7 +23,7 @@ dependencies {
  */
 run {
     if (project.hasProperty('runArgs')) {
-        args = [ project.findProperty('runArgs') ]
+        args = [ project.findProperty('runArgs').toString().split(" ") ].flatten()
     }
 
     if (System.properties.getProperty('consoleLogLevel') != null) {
