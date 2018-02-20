@@ -1,19 +1,25 @@
 package net.corda.blobinspector
 
-class FileBlobHander(config_: Config) : BlobHandler(config_) {
-    init {
-        config_ as FileConfig
+import java.io.File
+import java.net.URL
+
+class FileBlobHandler(config_: Config) : BlobHandler(config_) {
+    private val path = File(URL((config_ as FileConfig).file).toURI())
+
+    override fun getBytes(): ByteArray {
+        return path.readBytes()
     }
 }
 
-abstract class BlobHandler (val config: Config){
+abstract class BlobHandler (val config: Config) {
     companion object {
         fun make(config: Config) : BlobHandler {
             return when (config.mode) {
-                Mode.file -> FileBlobHander(config)
+                Mode.file -> FileBlobHandler(config)
             }
         }
     }
 
+    abstract fun getBytes() : ByteArray
 }
 

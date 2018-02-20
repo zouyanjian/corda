@@ -35,7 +35,7 @@ enum class Mode(
 }
 
 /**
- *
+ * Configuration data class for
  */
 abstract class Config (
         val mode: Mode
