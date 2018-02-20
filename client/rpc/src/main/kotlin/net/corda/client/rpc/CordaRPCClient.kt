@@ -39,7 +39,8 @@ data class CordaRPCClientConfiguration(val connectionMaxRetryInterval: Duration)
          * Returns the default configuration we recommend you use.
          */
         @JvmField
-        val DEFAULT = CordaRPCClientConfiguration(connectionMaxRetryInterval = RPCClientConfiguration.default.connectionMaxRetryInterval)
+        val DEFAULT = CordaRPCClientConfiguration(
+                connectionMaxRetryInterval = RPCClientConfiguration.default.connectionMaxRetryInterval)
     }
 }
 
