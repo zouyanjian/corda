@@ -34,9 +34,11 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.IOException
 import java.io.NotSerializableException
 import java.math.BigDecimal
+import java.net.URL
 import java.nio.ByteBuffer
 import java.time.*
 import java.time.temporal.ChronoUnit
@@ -45,6 +47,10 @@ import kotlin.reflect.full.superclasses
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+
+data class Test1Int(val a: Int)
+data class Test2Ints(val a: Int, val b: Int)
+data class Test3Ints(val a: Int, val b: Int, val c: Int)
 
 class SerializationOutputTests {
     private companion object {
@@ -1079,5 +1085,17 @@ class SerializationOutputTests {
         assertThatThrownBy {
             serdes(obj, factory, factory2, expectedEqual = false, expectDeserializedEqual = false)
         }.isInstanceOf(MissingAttachmentsException::class.java)
+    }
+
+    @Test
+    fun runMe() {
+
+        val factory = SerializerFactory(AllWhitelist, ClassLoader.getSystemClassLoader())
+        File(URL("file:///Users/katelyn/A.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test1Int(100)).bytes)
+        File(URL("file:///Users/katelyn/B.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test2Ints(100, 200)).bytes)
+        File(URL("file:///Users/katelyn/C.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test3Ints(100, 200, 300)).bytes)
     }
 }

@@ -13,7 +13,7 @@ class FileParseTests {
 
     @Test
     fun singleInt() {
-        val path = FileParseTests::class.java.getResource("FileParseTests.001")
+        val path = FileParseTests::class.java.getResource("FileParseTests.1Int")
         println (path)
 
         val args = Array<String>(4) {

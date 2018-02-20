@@ -9,10 +9,12 @@ apply plugin: 'application'
 mainClassName = 'net.corda.blobinspector.MainKt'
 
 dependencies {
+    compile project(':core')
     compile project(':node-api')
-    testCompile project(':test-utils')
 
     compile "commons-cli:commons-cli:$commons_cli_version"
+
+    testCompile project(':test-utils')
 
     testCompile "junit:junit:$junit_version"
 }
