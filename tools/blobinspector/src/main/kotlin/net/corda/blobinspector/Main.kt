@@ -44,10 +44,6 @@ fun loadModeSpecificOptions(config: Config, args: Array<String>) {
             addOption(modeOption())
         }
 
-        println (modeSpecificOptions)
-
-        println ("Loading options: ${args.joinToString(", ")}")
-
         populate (try {
             DefaultParser().parse(modeSpecificOptions, args, false)
         } catch (e: org.apache.commons.cli.ParseException) {

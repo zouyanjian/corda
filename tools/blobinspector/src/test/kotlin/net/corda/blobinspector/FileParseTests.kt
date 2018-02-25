@@ -1,5 +1,7 @@
 package net.corda.blobinspector
 
+import java.net.URI
+
 import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -8,7 +10,7 @@ import net.corda.testing.common.internal.ProjectStructure.projectRootDir
 
 class FileParseTests {
     @Suppress("UNUSED")
-    var localPath = projectRootDir.toUri().resolve(
+    var localPath : URI = projectRootDir.toUri().resolve(
             "tools/blobinspector/src/test/resources/net/corda/blobinspector")
 
     fun setupArgsWithFile(path: String)  = Array<String>(4) {
@@ -21,7 +23,7 @@ class FileParseTests {
         }
     }
 
-    val filesToTest = listOf (
+    private val filesToTest = listOf (
             "FileParseTests.1Int",
             "FileParseTests.2Int",
             "FileParseTests.3Int",
@@ -56,6 +58,28 @@ class FileParseTests {
         testFile(filesToTest[4])
         testFile(filesToTest[5])
         testFile(filesToTest[6])
+    }
+
+    @Test
+    fun networkParams() {
+        val file = "networkParams"
+        val path = FileParseTests::class.java.getResource(file)
+        val verbose = false
+
+        val args = verbose.let {
+            if (it)
+                Array(4) { when (it) { 0 -> "-f" ; 1 -> path.toString(); 2 -> "-d"; 3 -> "-vs"; else -> "error" } }
+            else
+                Array(3) { when (it) { 0 -> "-f" ; 1 -> path.toString(); 2 -> "-d"; else -> "error" } }
+        }
+
+        val handler = getMode(args).let { mode ->
+            loadModeSpecificOptions(mode, args)
+            BlobHandler.make(mode)
+        }
+
+        inspectBlob(handler.config, handler.getBytes())
+
     }
 
 }

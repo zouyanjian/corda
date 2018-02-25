@@ -44,6 +44,7 @@ abstract class Config (val mode: Mode) {
     var schema: Boolean = false
     var transforms: Boolean = false
     var data: Boolean = false
+    var verbose: Boolean = false
 
     abstract fun populateSpecific(cmdLine: CommandLine)
 
@@ -51,6 +52,9 @@ abstract class Config (val mode: Mode) {
         schema = cmdLine.hasOption('s')
         transforms = cmdLine.hasOption('t')
         data = cmdLine.hasOption('d')
+        verbose = cmdLine.hasOption('v')
+
+        populateSpecific(cmdLine)
     }
 
     /**
@@ -67,6 +71,10 @@ abstract class Config (val mode: Mode) {
         })
 
         addOption(Option("d", "data", false, "Display the serialised data").apply {
+            isRequired = false
+        })
+
+        addOption(Option("v", "verbose", false, "Enable debug output").apply {
             isRequired = false
         })
 

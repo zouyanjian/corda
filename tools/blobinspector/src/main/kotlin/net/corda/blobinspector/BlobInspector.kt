@@ -2,10 +2,17 @@ package net.corda.blobinspector
 
 import net.corda.core.utilities.ByteSequence
 import net.corda.nodeapi.internal.serialization.amqp.*
+import org.apache.qpid.proton.amqp.Binary
 import org.apache.qpid.proton.amqp.DescribedType
 import org.apache.qpid.proton.amqp.Symbol
 import org.apache.qpid.proton.codec.Data
 import java.nio.ByteBuffer
+
+fun String.debug(config: Config) {
+    if (config.verbose) {
+        println (this)
+    }
+}
 
 open class Property (
         val name: String,
@@ -14,9 +21,17 @@ open class Property (
 class PrimProperty (
         name: String,
         type: String,
-        private val value: String) : Property(name, type)
+        val value: String) : Property(name, type)
 {
     override fun toString(): String = "$name : $type : $value"
+}
+
+class BinaryProperty (
+        name: String,
+        type: String,
+        val value: ByteArray) : Property(name, type)
+{
+    override fun toString(): String = "$name : $type : <<<BINARY BLOB>>>"
 }
 
 class PrimListProperty (
@@ -32,7 +47,7 @@ class PrimListProperty (
 class InstanceProperty (
         name: String,
         type: String,
-        private val value: Instance) : Property(name, type)
+        val value: Instance) : Property(name, type)
 {
     override fun toString(): String = "$name : $value"
 }
@@ -63,12 +78,15 @@ fun inspectComposite(
 {
     if (obj.described !is List<*>) throw MalformedBlob("")
 
+    "composite: ${(typeMap[obj.descriptor] as CompositeType).name}".debug(config)
+
 
     val inst = Instance(
             typeMap[obj.descriptor]?.name ?: "",
             typeMap[obj.descriptor]?.label ?: "")
 
     (typeMap[obj.descriptor] as CompositeType).fields.zip(obj.described as List<*>).forEach {
+        "  field: ${it.first.name}".debug(config)
         inst.fields.add (
         if (it.second is DescribedType) {
             val d = inspectDescribed(config, typeMap, it.second as DescribedType)
@@ -86,11 +104,14 @@ fun inspectComposite(
                             it.first.name,
                             it.first.type,
                             d as MutableList<String>)
-                else -> throw NotImplementedError()
+                else -> return@forEach
             }
 
         } else {
-            PrimProperty(it.first.name, it.first.type, it.second.toString())
+            when (it.first.type) {
+                "binary" -> BinaryProperty(it.first.name, it.first.type, (it.second as Binary).array)
+                else -> PrimProperty(it.first.name, it.first.type, it.second.toString())
+            }
         })
     }
 
@@ -141,10 +162,14 @@ fun inspectDescribed(
         typeMap : Map<Symbol?, TypeNotation>,
         obj: DescribedType) : Any
 {
+    "${obj.descriptor} in typeMap? = ${obj.descriptor in typeMap}".debug(config)
+
     return when (typeMap[obj.descriptor]) {
         is CompositeType -> inspectComposite(config, typeMap, obj)
         is RestrictedType -> inspectRestricted(config, typeMap, obj)
-        else -> throw NotImplementedError()
+        else -> {
+            "${typeMap[obj.descriptor]?.name} is neither Composite or Restricted".debug(config)
+        }
     }
 
 }
@@ -185,7 +210,15 @@ fun inspectBlob(config: Config, blob: ByteArray) {
     val typeMap = e.schema.types.associateBy( {it.descriptor.name }, { it })
 
     if (config.data) {
-        println(inspectDescribed(config, typeMap, e.obj as DescribedType))
+        val inspected = inspectDescribed(config, typeMap, e.obj as DescribedType)
+        println ("\n$inspected")
+
+        (inspected as Instance).fields.find { it.type == "net.corda.core.serialization.SerializedBytes<?>" }?.let {
+            "Found field of SerializedBytes".debug(config)
+            (it as InstanceProperty).value.fields.find { it.name == "bytes" }?.let { raw ->
+                inspectBlob(config, (raw as BinaryProperty).value)
+            }
+        }
     }
 }
 
