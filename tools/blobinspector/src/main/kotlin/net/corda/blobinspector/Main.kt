@@ -3,7 +3,19 @@ package net.corda.blobinspector
 import org.apache.commons.cli.*
 import java.lang.IllegalArgumentException
 
-private fun modeOption() = Option("m", "mode", true, "mode, file is the default").apply { isRequired = false }
+/**
+ * Mode isn't a required property as we default it to [Mode.file]
+ */
+private fun modeOption() = Option("m", "mode", true, "mode, file is the default").apply {
+    isRequired = false
+}
+
+private fun schemaOption() = Option("s", "schema", false, "print the blob's schema").apply {
+    isRequired = false
+}
+
+
+
 
 /**
  *
@@ -33,7 +45,12 @@ fun getMode(args: Array<String>) : Config {
 fun loadModeSpecificOptions(config: Config, args: Array<String>) {
     config.apply {
         // load that modes specific command line switches, needs to include the mode option
-        val modeSpecificOptions = config.mode.options().apply { addOption(modeOption()) }
+        val modeSpecificOptions = Options().apply {
+            config.mode.options(this)
+            // also include the generic options
+            addOption(modeOption())
+            addOption(schemaOption())
+        }
 
         populate (try {
             DefaultParser().parse(modeSpecificOptions, args)

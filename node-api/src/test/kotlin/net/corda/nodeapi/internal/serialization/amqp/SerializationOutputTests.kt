@@ -52,6 +52,17 @@ data class Test1Int(val a: Int)
 data class Test2Ints(val a: Int, val b: Int)
 data class Test3Ints(val a: Int, val b: Int, val c: Int)
 
+data class Test1String(val a: String)
+
+data class Test1ListInt(val a: List<Int>)
+data class Test1ListString(val a: List<String>)
+
+data class Test1Class(val a: Test2Ints)
+data class Test2Classs(val a: Test2Ints, val b: Test1ListString)
+
+data class TestMapIntString(val map : Map<Int, String>)
+data class TestMapIntClass(val map : Map<Int, Test2Ints>)
+
 class SerializationOutputTests {
     private companion object {
         val BOB_IDENTITY = TestIdentity(BOB_NAME, 80).identity
@@ -1097,5 +1108,26 @@ class SerializationOutputTests {
                 SerializationOutput(factory).serialize(Test2Ints(100, 200)).bytes)
         File(URL("file:///Users/katelyn/C.blob").toURI()).writeBytes(
                 SerializationOutput(factory).serialize(Test3Ints(100, 200, 300)).bytes)
+        File(URL("file:///Users/katelyn/D.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test1String("This is a test")).bytes)
+        File(URL("file:///Users/katelyn/E.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test1ListInt(listOf(1,2,3,4,5))).bytes)
+        File(URL("file:///Users/katelyn/F.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test1ListString(listOf("a", "bb bb", "ccc ccc ccc"))).bytes)
+        File(URL("file:///Users/katelyn/G.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test1Class(Test2Ints(55,66))).bytes)
+        File(URL("file:///Users/katelyn/H.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(Test2Classs(
+                        Test2Ints(55,66),
+                        Test1ListString(listOf("this", "is", "a", "list")))).bytes)
+
+        File(URL("file:///Users/katelyn/I.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(
+                        TestMapIntString(mapOf (20 to "a a a", 40 to "bb bb bb", 7 to "this is a test" ))).bytes)
+
+        File(URL("file:///Users/katelyn/J.blob").toURI()).writeBytes(
+                SerializationOutput(factory).serialize(
+                        TestMapIntClass(mapOf(100 to Test2Ints(-1, -2), 100 to Test2Ints(-3, -4)))).bytes)
+
     }
 }

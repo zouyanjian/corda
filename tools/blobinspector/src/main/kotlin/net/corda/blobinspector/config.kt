@@ -17,13 +17,13 @@ import org.apache.commons.cli.Options
  */
 enum class Mode(
         val make : () -> Config,
-        val options : () -> Options) {
+        val options : (Options) -> Unit) {
     file(
             {
                 FileConfig(Mode.file)
             },
-            {
-                Options().apply{
+            { o ->
+                o.apply{
                     addOption(
                             Option ("f", "file", true, "path to file").apply {
                                 isRequired = true
@@ -40,8 +40,15 @@ enum class Mode(
 abstract class Config (
         val mode: Mode
 ) {
-    abstract fun populate(cmdLine: CommandLine)
+    var schema: Boolean = false
+
+    abstract fun populateSpecific(cmdLine: CommandLine)
+
+    fun populate(cmdLine: CommandLine) {
+        populateSpecific(cmdLine)
+    }
 }
+
 
 /**
  *
@@ -52,7 +59,7 @@ class FileConfig (
 
     var file: String = "unset"
 
-    override fun populate(cmdLine : CommandLine) {
+    override fun populateSpecific(cmdLine : CommandLine) {
         file = cmdLine.getParsedOptionValue("f") as String
     }
 }
