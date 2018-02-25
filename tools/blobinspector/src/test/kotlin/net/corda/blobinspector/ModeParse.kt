@@ -3,6 +3,7 @@ package net.corda.blobinspector
 import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import kotlin.test.assertFalse
 
 class ModeParse {
     @Test
@@ -45,6 +46,31 @@ class ModeParse {
         loadModeSpecificOptions(config, opts1)
 
         assertEquals("path/to/file", config.file)
+    }
+
+    @Test
+    fun schemaIsSet() {
+        Array(2) { when (it) { 0 -> "-f"; 1 -> "path/to/file"; else -> "error"  } }.let { options ->
+            getMode(options).apply {
+                loadModeSpecificOptions(this, options)
+                assertFalse (schema)
+            }
+        }
+
+        Array(3) { when (it) { 0 -> "--schema"; 1 -> "-f"; 2 -> "path/to/file"; else -> "error" }  }.let {
+            getMode(it).apply {
+                loadModeSpecificOptions(this, it)
+                assertTrue (schema)
+            }
+        }
+
+        Array(3) { when (it) { 0 -> "-f"; 1 -> "path/to/file"; 2 -> "-s"; else -> "error" }  }.let {
+            getMode(it).apply {
+                loadModeSpecificOptions(this, it)
+                assertTrue (schema)
+            }
+        }
+
     }
 
 

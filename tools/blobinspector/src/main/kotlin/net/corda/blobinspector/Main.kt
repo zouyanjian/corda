@@ -10,11 +10,6 @@ private fun modeOption() = Option("m", "mode", true, "mode, file is the default"
     isRequired = false
 }
 
-private fun schemaOption() = Option("s", "schema", false, "print the blob's schema").apply {
-    isRequired = false
-}
-
-
 
 
 /**
@@ -45,16 +40,18 @@ fun getMode(args: Array<String>) : Config {
 fun loadModeSpecificOptions(config: Config, args: Array<String>) {
     config.apply {
         // load that modes specific command line switches, needs to include the mode option
-        val modeSpecificOptions = Options().apply {
-            config.mode.options(this)
-            // also include the generic options
+        val modeSpecificOptions = config.options().apply {
             addOption(modeOption())
-            addOption(schemaOption())
         }
 
+        println (modeSpecificOptions)
+
+        println ("Loading options: ${args.joinToString(", ")}")
+
         populate (try {
-            DefaultParser().parse(modeSpecificOptions, args)
+            DefaultParser().parse(modeSpecificOptions, args, false)
         } catch (e: org.apache.commons.cli.ParseException) {
+            println ("Error: ${e.message}")
             HelpFormatter().printHelp("blobinspector", modeSpecificOptions)
             System.exit(1)
             return

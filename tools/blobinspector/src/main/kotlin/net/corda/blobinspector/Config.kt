@@ -1,6 +1,7 @@
 package net.corda.blobinspector
 
 import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
 
@@ -35,17 +36,42 @@ enum class Mode(
 }
 
 /**
- * Configuration data class for
+ * Configuration data class for  the Blob Inspector.
+ *
+ * @property mode
  */
-abstract class Config (
-        val mode: Mode
-) {
+abstract class Config (val mode: Mode) {
     var schema: Boolean = false
+    var transforms: Boolean = false
+    var data: Boolean = false
 
     abstract fun populateSpecific(cmdLine: CommandLine)
 
     fun populate(cmdLine: CommandLine) {
-        populateSpecific(cmdLine)
+        schema = cmdLine.hasOption('s')
+        transforms = cmdLine.hasOption('t')
+        data = cmdLine.hasOption('d')
+    }
+
+    /**
+     *
+     */
+    fun options() = Options().apply {
+        // install generic options
+        addOption(Option("s", "schema", false, "print the blob's schema").apply {
+            isRequired = false
+        })
+
+        addOption(Option("t", "transforms", false, "print the blob's transforms schema").apply {
+            isRequired = false
+        })
+
+        addOption(Option("d", "data", false, "Display the serialised data").apply {
+            isRequired = false
+        })
+
+        // install the mode specific options
+        mode.options(this)
     }
 }
 

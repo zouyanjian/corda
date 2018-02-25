@@ -161,27 +161,31 @@ fun inspectBlob(config: Config, blob: ByteArray) {
     val blobHeader = bytes.take(headerSize)
 
     if (blobHeader !in headers) {
-        return
+        throw MalformedBlob ("Blob is not a Corda AMQP serialised object graph")
     }
 
 
     val data = Data.Factory.create()
-
     val size = data.decode(ByteBuffer.wrap(bytes.bytes, bytes.offset + headerSize, bytes.size - headerSize))
 
     if (size.toInt() != blob.size - headerSize) {
+        throw MalformedBlob ("Blob size does not match internal size")
     }
 
     val e = Envelope.get(data)
 
-    /*
-    println(e.schema)
-    println (e.transformsSchema)
-    */
+    if (config.schema) {
+        println(e.schema)
+    }
+
+    if (config.transforms) {
+        println(e.transformsSchema)
+    }
 
     val typeMap = e.schema.types.associateBy( {it.descriptor.name }, { it })
 
-
-    println (inspectDescribed(config, typeMap, e.obj as DescribedType))
+    if (config.data) {
+        println(inspectDescribed(config, typeMap, e.obj as DescribedType))
+    }
 }
 
