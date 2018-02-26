@@ -8,12 +8,18 @@ import org.apache.qpid.proton.amqp.Symbol
 import org.apache.qpid.proton.codec.Data
 import java.nio.ByteBuffer
 
+/**
+ * Print a string to the console only if the verbose config option is set.
+ */
 fun String.debug(config: Config) {
     if (config.verbose) {
         println (this)
     }
 }
 
+/**
+ *
+ */
 open class Property (
         val name: String,
         val type: String)
@@ -89,6 +95,7 @@ fun inspectComposite(
         "  field: ${it.first.name}".debug(config)
         inst.fields.add (
         if (it.second is DescribedType) {
+            "    - is described".debug(config)
             val d = inspectDescribed(config, typeMap, it.second as DescribedType)
 
             when (d) {
@@ -99,15 +106,21 @@ fun inspectComposite(
                             d.apply {
                                 offset = inst.offset + 4
                             })
-                is List<*> ->
+                is List<*> -> {
+                    "      - List".debug(config)
                     PrimListProperty (
                             it.first.name,
                             it.first.type,
                             d as MutableList<String>)
-                else -> return@forEach
+                }
+                else -> {
+                    "    skip it".debug(config)
+                    return@forEach
+                }
             }
 
         } else {
+            "    - is prim".debug(config)
             when (it.first.type) {
                 "binary" -> BinaryProperty(it.first.name, it.first.type, (it.second as Binary).array)
                 else -> PrimProperty(it.first.name, it.first.type, it.second.toString())
@@ -137,9 +150,13 @@ fun inspectRestrictedList(
 {
     if (obj.described !is List<*>) throw MalformedBlob("")
 
+    typeMap[obj.descriptor]?.name?.debug(config)
+
+
     return mutableListOf<String>().apply {
         (obj.described as List<*>).forEach {
             try {
+                "List of described".debug(config)
                 inspectDescribed(config, typeMap, it as DescribedType)
             } catch (e: ClassCastException) {
                 add(it.toString())
@@ -165,8 +182,14 @@ fun inspectDescribed(
     "${obj.descriptor} in typeMap? = ${obj.descriptor in typeMap}".debug(config)
 
     return when (typeMap[obj.descriptor]) {
-        is CompositeType -> inspectComposite(config, typeMap, obj)
-        is RestrictedType -> inspectRestricted(config, typeMap, obj)
+        is CompositeType -> {
+            "* It's composite".debug(config)
+            inspectComposite(config, typeMap, obj)
+        }
+        is RestrictedType -> {
+            "* It's restricted".debug(config)
+            inspectRestricted(config, typeMap, obj)
+        }
         else -> {
             "${typeMap[obj.descriptor]?.name} is neither Composite or Restricted".debug(config)
         }

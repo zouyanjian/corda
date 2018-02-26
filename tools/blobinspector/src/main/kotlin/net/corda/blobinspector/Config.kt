@@ -85,11 +85,12 @@ abstract class Config (val mode: Mode) {
 
 
 /**
- *
+ * Configuration object when running in "File" mode, i.e. the object has been specified at
+ * the command line
  */
 class FileConfig (
         mode: Mode
-        ) : Config(mode) {
+) : Config(mode) {
 
     var file: String = "unset"
 
