@@ -17,12 +17,29 @@ fun String.debug(config: Config) {
     }
 }
 
+interface Stringify {
+    fun stringify(sb: StringBuilder)
+}
+
+var g_indent = 0
+
+fun StringBuilder.appendlnIndent(ln: String) {
+    if (ln.endsWith("}") || ln.endsWith("]")) {
+        g_indent -= 4
+    }
+    this.appendln("${"".padStart(g_indent, ' ')}$ln")
+    if (ln.endsWith("{") || ln.endsWith("[")) {
+        g_indent += 4
+    }
+}
+
+
 /**
  *
  */
-open class Property (
+abstract class Property (
         val name: String,
-        val type: String)
+        val type: String) : Stringify
 
 class PrimProperty (
         name: String,
@@ -30,6 +47,10 @@ class PrimProperty (
         val value: String) : Property(name, type)
 {
     override fun toString(): String = "$name : $type : $value"
+
+    override fun stringify(sb: StringBuilder) {
+        sb.appendlnIndent("$name : $type : $value")
+    }
 }
 
 class BinaryProperty (
@@ -38,15 +59,25 @@ class BinaryProperty (
         val value: ByteArray) : Property(name, type)
 {
     override fun toString(): String = "$name : $type : <<<BINARY BLOB>>>"
+
+    override fun stringify(sb: StringBuilder) {
+        sb.appendlnIndent("$name : $type : <<<BINARY BLOB>>>")
+    }
 }
 
-class PrimListProperty (
+class ListProperty (
         name: String,
         type: String,
-        private val values: MutableList<String> = mutableListOf()) : Property (name, type)
+        private val values: MutableList<Any> = mutableListOf()) : Property (name, type)
 {
-    override fun toString(): String {
-        return "$name : $type : [ ${values.joinToString(", ")} ]"
+    override fun stringify(sb: StringBuilder) {
+        sb.apply {
+            appendlnIndent ("$name : $type : [")
+            values.forEach {
+                (it as Stringify).stringify(this)
+            }
+            appendlnIndent("]")
+        }
     }
 }
 
@@ -55,25 +86,23 @@ class InstanceProperty (
         type: String,
         val value: Instance) : Property(name, type)
 {
-    override fun toString(): String = "$name : $value"
+    override fun stringify(sb: StringBuilder) {
+        value.stringify(sb)
+    }
 }
 
 class Instance (
         val name: String,
         val type: String,
-        val fields: MutableList<Property> = mutableListOf(),
-        var offset: Int = 0)
-{
-    override fun toString(): String {
-        val pad = "".padStart(offset, ' ')
-        return StringBuilder("")
-                .appendln("$name {")
-                .apply {
-                    fields.forEach {
-                        appendln("$pad    $it")
-                    }
-                }.append("$pad}")
-                .toString()
+        val fields: MutableList<Property> = mutableListOf()) : Stringify {
+    override fun stringify(sb: StringBuilder) {
+        sb.apply {
+            appendlnIndent("$name : {")
+            fields.forEach {
+                it.stringify(this)
+            }
+            appendlnIndent("}")
+        }
     }
 }
 
@@ -81,7 +110,7 @@ fun inspectComposite(
         config: Config,
         typeMap : Map<Symbol?, TypeNotation>,
         obj: DescribedType) : Instance
-{
+    {
     if (obj.described !is List<*>) throw MalformedBlob("")
 
     "composite: ${(typeMap[obj.descriptor] as CompositeType).name}".debug(config)
@@ -103,15 +132,13 @@ fun inspectComposite(
                     InstanceProperty(
                             it.first.name,
                             it.first.type,
-                            d.apply {
-                                offset = inst.offset + 4
-                            })
+                            d)
                 is List<*> -> {
                     "      - List".debug(config)
-                    PrimListProperty (
+                    ListProperty (
                             it.first.name,
                             it.first.type,
-                            d as MutableList<String>)
+                            d as MutableList<Any>)
                 }
                 else -> {
                     "    skip it".debug(config)
@@ -150,14 +177,10 @@ fun inspectRestrictedList(
 {
     if (obj.described !is List<*>) throw MalformedBlob("")
 
-    typeMap[obj.descriptor]?.name?.debug(config)
-
-
-    return mutableListOf<String>().apply {
+    return mutableListOf<Any>().apply {
         (obj.described as List<*>).forEach {
             try {
-                "List of described".debug(config)
-                inspectDescribed(config, typeMap, it as DescribedType)
+                add (inspectDescribed(config, typeMap, it as DescribedType))
             } catch (e: ClassCastException) {
                 add(it.toString())
             }
@@ -234,7 +257,9 @@ fun inspectBlob(config: Config, blob: ByteArray) {
 
     if (config.data) {
         val inspected = inspectDescribed(config, typeMap, e.obj as DescribedType)
-        println ("\n$inspected")
+
+
+        println ("\n${StringBuilder().apply { (inspected as Instance).stringify(this) }}")
 
         (inspected as Instance).fields.find { it.type == "net.corda.core.serialization.SerializedBytes<?>" }?.let {
             "Found field of SerializedBytes".debug(config)

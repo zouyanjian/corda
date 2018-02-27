@@ -47,6 +47,7 @@ abstract class Config (val mode: Mode) {
     var verbose: Boolean = false
 
     abstract fun populateSpecific(cmdLine: CommandLine)
+    abstract fun withVerbose() : Config
 
     fun populate(cmdLine: CommandLine) {
         schema = cmdLine.hasOption('s')
@@ -96,5 +97,14 @@ class FileConfig (
 
     override fun populateSpecific(cmdLine : CommandLine) {
         file = cmdLine.getParsedOptionValue("f") as String
+    }
+
+    override fun withVerbose() : FileConfig {
+        return FileConfig(mode).apply {
+            this.schema = schema
+            this.transforms = transforms
+            this.data = data
+            this.verbose = true
+        }
     }
 }

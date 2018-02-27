@@ -64,7 +64,7 @@ class FileParseTests {
     fun networkParams() {
         val file = "networkParams"
         val path = FileParseTests::class.java.getResource(file)
-        val verbose = true
+        val verbose = false
 
         val args = verbose.let {
             if (it)
