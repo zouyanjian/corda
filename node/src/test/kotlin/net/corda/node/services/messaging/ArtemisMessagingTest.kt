@@ -114,6 +114,21 @@ class ArtemisMessagingTest {
     }
 
     @Test
+    fun `client should throw if message size exceed limit`() {
+        val serverAddress = freeLocalHostAndPort()
+        createMessagingServer(serverAddress.port).start()
+        val messagingClient = createMessagingClient(server = serverAddress, maxMessageSize = 10_000)
+        val badMessage = messagingClient.createMessage(TOPIC, data = ByteArray(10_000))
+        val goodMessage = messagingClient.createMessage(TOPIC, data = ByteArray(9_999))
+        messagingClient.start()
+
+        messagingClient.send(goodMessage, messagingClient.myAddress)
+        assertThatThrownBy { messagingClient.send(badMessage, messagingClient.myAddress) }
+                .isInstanceOf(IllegalArgumentException::class.java)
+                .hasMessageContaining("Message size exceeded maximum message size limit")
+    }
+
+    @Test
     fun `client should connect to local server`() {
         createMessagingServer().start()
         createMessagingClient()

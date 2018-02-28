@@ -391,7 +391,8 @@ class P2PMessagingClient(private val config: NodeConfiguration,
     }
 
     private fun artemisToCordaMessage(message: ClientMessage): ReceivedMessage? {
-        try {
+        return try {
+            require(message.bodySize < maxMessageSize) { "Received message size exceeded maximum message size limit: $maxMessageSize." }
             val topic = message.required(topicProperty) { getStringProperty(it) }
             val user = requireNotNull(message.getStringProperty(HDR_VALIDATED_USER)) { "Message is not authenticated" }
             val platformVersion = message.required(platformVersionProperty) { getIntProperty(it) }
@@ -399,10 +400,10 @@ class P2PMessagingClient(private val config: NodeConfiguration,
             val uuid = message.required(HDR_DUPLICATE_DETECTION_ID) { message.getStringProperty(it) }
             log.info("Received message from: ${message.address} user: $user topic: $topic uuid: $uuid")
 
-            return ArtemisReceivedMessage(topic, CordaX500Name.parse(user), platformVersion, uuid, message)
+            ArtemisReceivedMessage(topic, CordaX500Name.parse(user), platformVersion, uuid, message)
         } catch (e: Exception) {
             log.error("Unable to process message, ignoring it: $message", e)
-            return null
+            null
         }
     }
 
@@ -425,7 +426,7 @@ class P2PMessagingClient(private val config: NodeConfiguration,
         state.checkNotLocked()
         // Because handlers is a COW list, the loop inside filter will operate on a snapshot. Handlers being added
         // or removed whilst the filter is executing will not affect anything.
-        val deliverTo = handlers.filter { it.topic.isBlank() || it.topic== msg.topic }
+        val deliverTo = handlers.filter { it.topic.isBlank() || it.topic == msg.topic }
         try {
             // This will perform a BLOCKING call onto the executor. Thus if the handlers are slow, we will
             // be slow, and Artemis can handle that case intelligently. We don't just invoke the handler
@@ -476,8 +477,8 @@ class P2PMessagingClient(private val config: NodeConfiguration,
             val prevRunning = running
             running = false
             networkChangeSubscription?.unsubscribe()
-            require(p2pConsumer != null, {"stop can't be called twice"})
-            require(producer != null, {"stop can't be called twice"})
+            require(p2pConsumer != null, { "stop can't be called twice" })
+            require(producer != null, { "stop can't be called twice" })
 
             close(p2pConsumer)
             p2pConsumer = null
@@ -513,10 +514,11 @@ class P2PMessagingClient(private val config: NodeConfiguration,
     override fun close() = stop()
 
     override fun send(message: Message, target: MessageRecipients, retryId: Long?, sequenceKey: Any, additionalHeaders: Map<String, String>) {
-       sendInternal(message, target, retryId, additionalHeaders)
+        sendInternal(message, target, retryId, additionalHeaders)
     }
 
     private fun sendInternal(message: Message, target: MessageRecipients, retryId: Long?, additionalHeaders: Map<String, String> = emptyMap()) {
+        require(message.data.size < maxMessageSize) { "Message size exceeded maximum message size limit: $maxMessageSize." }
         // We have to perform sending on a different thread pool, since using the same pool for messaging and
         // fibers leads to Netty buffer memory leaks, caused by both Netty and Quasar fiddling with thread-locals.
         messagingExecutor.fetchFrom {
@@ -535,7 +537,7 @@ class P2PMessagingClient(private val config: NodeConfiguration,
                     if (amqDelayMillis > 0 && message.topic == StateMachineManagerImpl.sessionTopic) {
                         putLongProperty(HDR_SCHEDULED_DELIVERY_TIME, System.currentTimeMillis() + amqDelayMillis)
                     }
-                    additionalHeaders.forEach { key, value -> putStringProperty(key, value)}
+                    additionalHeaders.forEach { key, value -> putStringProperty(key, value) }
                 }
                 log.trace {
                     "Send to: $mqAddress topic: ${message.topic} uuid: ${message.uniqueMessageId}"
@@ -721,8 +723,7 @@ private class P2PMessagingConsumer(
     }
 
     private fun resumeInitial() {
-
-        if(!initialConsumer.started) {
+        if (!initialConsumer.started) {
             initialConsumer.start()
         }
         if (!initialConsumer.connected) {
