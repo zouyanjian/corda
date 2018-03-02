@@ -105,7 +105,7 @@ class DeserializationInput @JvmOverloads constructor(private val serializerFacto
         } catch (nse: NotSerializableException) {
             throw nse
         } catch (t: Throwable) {
-            throw NotSerializableException("Unexpected throwable: ${t.message} ${t.getStackTraceAsString()}")
+            throw NotSerializableException("Unexpected throwable: ${t.getStackTraceAsString()}")
         } finally {
             objectHistory.clear()
         }

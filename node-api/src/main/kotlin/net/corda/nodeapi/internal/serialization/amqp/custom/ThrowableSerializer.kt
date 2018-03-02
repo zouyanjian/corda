@@ -8,9 +8,14 @@ import net.corda.nodeapi.internal.serialization.amqp.*
 import java.io.NotSerializableException
 
 class ThrowableSerializer(factory: SerializerFactory) : CustomSerializer.Proxy<Throwable, ThrowableSerializer.ThrowableProxy>(Throwable::class.java, ThrowableProxy::class.java, factory) {
-
     companion object {
         private val logger = contextLogger()
+
+        // This is in the companion so it can be used from the serializability checker.
+        fun propertiesForDeserialization(obj: Class<Throwable>, factory: SerializerFactory): List<PropertyAccessor> {
+            val constructor = constructorForDeserialization(obj)
+            return propertiesForSerializationFromConstructor(constructor!!, obj, factory)
+        }
     }
 
     override val revealSubclassesInSchema: Boolean = true
@@ -22,8 +27,8 @@ class ThrowableSerializer(factory: SerializerFactory) : CustomSerializer.Proxy<T
         val message = if (obj is CordaThrowable) {
             // Try and find a constructor
             try {
-                val constructor = constructorForDeserialization(obj.javaClass)
-                propertiesForSerializationFromConstructor(constructor!!, obj.javaClass, factory).forEach { property ->
+                val properties = propertiesForDeserialization(obj.javaClass, factory)
+                properties.forEach { property ->
                     extraProperties[property.getter.name] = property.getter.propertyReader.read(obj)
                 }
             } catch (e: NotSerializableException) {

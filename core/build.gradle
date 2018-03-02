@@ -174,3 +174,9 @@ scanApi {
 publish {
     name jar.baseName
 }
+
+task printClasspath {
+    doLast {
+        println((configurations.runtime + jar.outputs.files.first()).join(":"))
+    }
+}

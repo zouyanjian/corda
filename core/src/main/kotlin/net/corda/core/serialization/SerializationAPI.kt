@@ -189,12 +189,12 @@ interface SerializationContext {
  * Global singletons to be used as defaults that are injected elsewhere (generally, in the node or in RPC client).
  */
 object SerializationDefaults {
-    val SERIALIZATION_FACTORY get() = effectiveSerializationEnv.serializationFactory
-    val P2P_CONTEXT get() = effectiveSerializationEnv.p2pContext
-    val RPC_SERVER_CONTEXT get() = effectiveSerializationEnv.rpcServerContext
-    val RPC_CLIENT_CONTEXT get() = effectiveSerializationEnv.rpcClientContext
-    val STORAGE_CONTEXT get() = effectiveSerializationEnv.storageContext
-    val CHECKPOINT_CONTEXT get() = effectiveSerializationEnv.checkpointContext
+    val SERIALIZATION_FACTORY: SerializationFactory get() = effectiveSerializationEnv.serializationFactory
+    val P2P_CONTEXT: SerializationContext get() = effectiveSerializationEnv.p2pContext
+    val RPC_SERVER_CONTEXT: SerializationContext get() = effectiveSerializationEnv.rpcServerContext
+    val RPC_CLIENT_CONTEXT: SerializationContext get() = effectiveSerializationEnv.rpcClientContext
+    val STORAGE_CONTEXT: SerializationContext get() = effectiveSerializationEnv.storageContext
+    val CHECKPOINT_CONTEXT: SerializationContext get() = effectiveSerializationEnv.checkpointContext
 }
 
 /**
