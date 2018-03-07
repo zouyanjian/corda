@@ -13,12 +13,13 @@ class FileParseTests {
     var localPath : URI = projectRootDir.toUri().resolve(
             "tools/blobinspector/src/test/resources/net/corda/blobinspector")
 
-    fun setupArgsWithFile(path: String)  = Array<String>(4) {
+    fun setupArgsWithFile(path: String)  = Array<String>(5) {
         when (it) {
             0 -> "-m"
             1 -> "file"
             2 -> "-f"
             3 -> path
+            4 -> "-d"
             else -> "error"
         }
     }

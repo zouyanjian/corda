@@ -14,6 +14,14 @@ private fun modeOption() = Option("m", "mode", true, "mode, file is the default"
 
 /**
  *
+ * Parse the command line arguments looking for the main mode into which the application is
+ * being put. Note, this defaults to [Mode.file] if not set meaning we will look for a file path
+ * being passed as a parameter and parse that file.
+ *
+ * @param args reflects the command line arguments
+ *
+ * @return An instantiated but unpopulated [Config] object instance suitable for the mode into
+ * which we've been placed. This Config object should be populated via [loadModeSpecificOptions]
  */
 fun getMode(args: Array<String>) : Config {
     // For now we only care what mode we're being put in, we can build the rest of the args and parse them
@@ -37,6 +45,12 @@ fun getMode(args: Array<String>) : Config {
     }.make()
 }
 
+/**
+ *
+ * @param config an instance of a [Config] specialisation suitable for the mode into which
+ * the application has been put.
+ * @param args The command line arguments
+ */
 fun loadModeSpecificOptions(config: Config, args: Array<String>) {
     config.apply {
         // load that modes specific command line switches, needs to include the mode option
@@ -55,6 +69,9 @@ fun loadModeSpecificOptions(config: Config, args: Array<String>) {
     }
 }
 
+/**
+ * Executable entry point
+ */
 fun main(args: Array<String>) {
     getMode(args).apply {
         loadModeSpecificOptions(this, args)

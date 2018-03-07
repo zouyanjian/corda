@@ -21,30 +21,43 @@ interface Stringify {
     fun stringify(sb: StringBuilder)
 }
 
+/**
+ * Used by the [StringBuilder] extension method [StringBuilder.appendLnIndent] to track the current indentation
+ * level for pretty printing
+ */
 var g_indent = 0
 
+/**
+ * Adds a line and adjust the indentation depending upon whether the
+ */
 fun StringBuilder.appendlnIndent(ln: String) {
     if (ln.endsWith("}") || ln.endsWith("]")) {
         g_indent -= 4
     }
-    this.appendln("${"".padStart(g_indent, ' ')}$ln")
+    appendln("${"".padStart(g_indent, ' ')}$ln")
     if (ln.endsWith("{") || ln.endsWith("[")) {
         g_indent += 4
     }
 }
 
-
 /**
+ * Represents the deserialized form of the property of an Object
  *
+ * @param name
+ * @param type
  */
 abstract class Property (
         val name: String,
         val type: String) : Stringify
 
+/**
+ * Derived class of [Property], represents properties of an object that are non compelex, such
+ * as any POD type or String
+ */
 class PrimProperty (
         name: String,
         type: String,
-        val value: String) : Property(name, type)
+        private val value: String) : Property(name, type)
 {
     override fun toString(): String = "$name : $type : $value"
 
@@ -53,6 +66,10 @@ class PrimProperty (
     }
 }
 
+/**
+ * Derived class of [Property] that represents a binary blob. Specifically useful because printing
+ * a stream of bytes onto the screen isn't very use friendly
+ */
 class BinaryProperty (
         name: String,
         type: String,
@@ -65,6 +82,10 @@ class BinaryProperty (
     }
 }
 
+/**
+ * Derived class of [Property] that represent a list property. List could be either PoD types or
+ * composite types.
+ */
 class ListProperty (
         name: String,
         type: String,
@@ -72,15 +93,31 @@ class ListProperty (
 {
     override fun stringify(sb: StringBuilder) {
         sb.apply {
-            appendlnIndent ("$name : $type : [")
-            values.forEach {
-                (it as Stringify).stringify(this)
+            if (values.isEmpty()) {
+                appendlnIndent ("$name : $type : [ << EMPTY LIST >> ]")
             }
-            appendlnIndent("]")
+            else if (values.first() is Stringify) {
+                appendlnIndent("$name : $type : [")
+                values.forEach {
+                    (it as Stringify).stringify(this)
+                }
+                appendlnIndent("]")
+            }
+            else {
+                appendlnIndent("$name : $type : [")
+                values.forEach {
+                    appendlnIndent(it.toString())
+                }
+                appendlnIndent("]")
+            }
         }
     }
 }
 
+/**
+ * Derived class of [Property] that represents class properties that are themselves instances of
+ * some complex type
+ */
 class InstanceProperty (
         name: String,
         type: String,
