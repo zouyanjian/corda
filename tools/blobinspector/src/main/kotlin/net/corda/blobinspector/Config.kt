@@ -1,7 +1,7 @@
 package net.corda.blobinspector
 
 import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.HelpFormatter
+import net.corda.core.serialization.SerializedBytes
 import org.apache.commons.cli.Option
 import org.apache.commons.cli.Options
 
@@ -18,7 +18,8 @@ import org.apache.commons.cli.Options
  */
 enum class Mode(
         val make : () -> Config,
-        val options : (Options) -> Unit) {
+        val options : (Options) -> Unit
+) {
     file(
             {
                 FileConfig(Mode.file)
@@ -31,6 +32,14 @@ enum class Mode(
                             }
                     )
                 }
+            }
+    ),
+    inMem(
+            {
+                InMemoryConfig(Mode.inMem)
+            },
+            {
+
             }
     )
 }
@@ -106,5 +115,23 @@ class FileConfig (
             this.data = data
             this.verbose = true
         }
+    }
+}
+
+
+/**
+ *
+ */
+class InMemoryConfig (
+        mode: Mode
+) : Config(mode) {
+    var blob: SerializedBytes<*>? = null
+
+    override fun populateSpecific(cmdLine: CommandLine) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun withVerbose(): Config {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

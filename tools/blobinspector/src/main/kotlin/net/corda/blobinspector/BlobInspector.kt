@@ -17,15 +17,23 @@ fun String.debug(config: Config) {
     }
 }
 
+/**
+ *
+ */
 interface Stringify {
     fun stringify(sb: StringBuilder)
 }
 
 /**
- * Used by the [StringBuilder] extension method [StringBuilder.appendLnIndent] to track the current indentation
+ * Used by the [StringBuilder] extension method to track the current indentation
  * level for pretty printing
  */
 var g_indent = 0
+
+/**
+ *
+ */
+var g_indenting = true
 
 /**
  * Adds a line and adjust the indentation depending upon whether the
@@ -34,10 +42,31 @@ fun StringBuilder.appendlnIndent(ln: String) {
     if (ln.endsWith("}") || ln.endsWith("]")) {
         g_indent -= 4
     }
-    appendln("${"".padStart(g_indent, ' ')}$ln")
+    appendln("${"".padStart(if(g_indenting) g_indent else 0, ' ')}$ln")
     if (ln.endsWith("{") || ln.endsWith("[")) {
         g_indent += 4
     }
+
+    g_indenting = true
+}
+
+/**
+ * Adds a line and adjust the indentation depending upon whether the
+ */
+fun StringBuilder.appendIndent(ln: String) {
+    g_indenting = false
+
+    if (ln.endsWith("}") || ln.endsWith("]")) {
+        g_indent -= 4
+    }
+    append("${"".padStart(g_indent, ' ')}$ln")
+    if (ln.endsWith("{") || ln.endsWith("[")) {
+        g_indent += 4
+    }
+}
+
+fun String.simplifyClass() : String {
+    return this.substring(this.lastIndexOf('.') + 1)
 }
 
 /**
@@ -116,7 +145,7 @@ class ListProperty (
 
 /**
  * Derived class of [Property] that represents class properties that are themselves instances of
- * some complex type
+ * some complex type.
  */
 class InstanceProperty (
         name: String,
@@ -124,17 +153,21 @@ class InstanceProperty (
         val value: Instance) : Property(name, type)
 {
     override fun stringify(sb: StringBuilder) {
+        sb.appendIndent("$name : ")
         value.stringify(sb)
     }
 }
 
+/**
+ * Represents an instance of a composite type.
+ */
 class Instance (
         val name: String,
         val type: String,
         val fields: MutableList<Property> = mutableListOf()) : Stringify {
     override fun stringify(sb: StringBuilder) {
         sb.apply {
-            appendlnIndent("$name : {")
+            appendlnIndent("${name.simplifyClass()} : {")
             fields.forEach {
                 it.stringify(this)
             }
@@ -143,6 +176,9 @@ class Instance (
     }
 }
 
+/**
+ *
+ */
 fun inspectComposite(
         config: Config,
         typeMap : Map<Symbol?, TypeNotation>,
@@ -151,7 +187,6 @@ fun inspectComposite(
     if (obj.described !is List<*>) throw MalformedBlob("")
 
     "composite: ${(typeMap[obj.descriptor] as CompositeType).name}".debug(config)
-
 
     val inst = Instance(
             typeMap[obj.descriptor]?.name ?: "",
