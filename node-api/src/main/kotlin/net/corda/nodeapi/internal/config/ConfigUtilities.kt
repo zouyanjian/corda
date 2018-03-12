@@ -66,15 +66,12 @@ fun <T : Any> Config.parseAs(clazz: KClass<T>): T {
 }
 
 class UnknownConfigurationKeysException private constructor(val unknownKeys: Set<String>) : IllegalArgumentException(message(unknownKeys)) {
-
     init {
         require(unknownKeys.isNotEmpty()) { "Absence of unknown keys should not raise UnknownConfigurationKeysException." }
     }
 
     companion object {
-
         fun of(offendingKeys: Set<String>): UnknownConfigurationKeysException = UnknownConfigurationKeysException(offendingKeys)
-
         private fun message(offendingKeys: Set<String>) = "Unknown configuration keys: ${offendingKeys.joinToString(", ", "[", "]")}."
     }
 }
@@ -106,6 +103,7 @@ private fun Config.getSingleValue(path: String, type: KType): Any? {
         NetworkHostAndPort::class -> NetworkHostAndPort.parse(getString(path))
         Path::class -> Paths.get(getString(path))
         URL::class -> URL(getString(path))
+        UUID::class -> UUID.fromString(getString(path))
         CordaX500Name::class -> {
             when (getValue(path).valueType()) {
                 ConfigValueType.OBJECT -> getConfig(path).parseAs()
@@ -140,6 +138,7 @@ private fun Config.getCollectionValue(path: String, type: KType): Collection<Any
         NetworkHostAndPort::class -> getStringList(path).map(NetworkHostAndPort.Companion::parse)
         Path::class -> getStringList(path).map { Paths.get(it) }
         URL::class -> getStringList(path).map(::URL)
+        UUID::class -> getStringList(path).map(UUID::fromString)
         CordaX500Name::class -> getStringList(path).map(CordaX500Name.Companion::parse)
         Properties::class -> getConfigList(path).map(Config::toProperties)
         else -> if (elementClass.java.isEnum) {
@@ -189,7 +188,7 @@ private fun Any.toConfigMap(): Map<String, Any> {
         val configValue = if (value is String || value is Boolean || value is Number) {
             // These types are supported by Config as use as is
             value
-        } else if (value is Temporal || value is NetworkHostAndPort || value is CordaX500Name || value is Path || value is URL) {
+        } else if (value is Temporal || value is NetworkHostAndPort || value is CordaX500Name || value is Path || value is URL || value is UUID) {
             // These types make sense to be represented as Strings and the exact inverse parsing function for use in parseAs
             value.toString()
         } else if (value is Enum<*>) {
@@ -224,6 +223,7 @@ private fun Iterable<*>.toConfigIterable(field: Field): Iterable<Any?> {
         NetworkHostAndPort::class.java -> map(Any?::toString)
         Path::class.java -> map(Any?::toString)
         URL::class.java -> map(Any?::toString)
+        UUID::class.java -> map(Any?::toString)
         CordaX500Name::class.java -> map(Any?::toString)
         Properties::class.java -> map { ConfigFactory.parseMap(uncheckedCast(it)).root() }
         else -> if (elementType.isEnum) {

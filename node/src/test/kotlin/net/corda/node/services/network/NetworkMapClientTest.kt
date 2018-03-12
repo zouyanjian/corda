@@ -1,15 +1,14 @@
 package net.corda.node.services.network
 
 import net.corda.core.crypto.Crypto
-import net.corda.core.crypto.sha256
-import net.corda.core.internal.*
+import net.corda.core.internal.sign
 import net.corda.core.serialization.serialize
+import net.corda.core.utilities.NetworkHostAndPort
 import net.corda.core.utilities.seconds
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.SerializationEnvironmentRule
-import net.corda.testing.common.internal.testNetworkParameters
-import net.corda.testing.driver.PortAllocation
 import net.corda.testing.internal.DEV_ROOT_CA
 import net.corda.testing.internal.TestNodeInfoBuilder
 import net.corda.testing.internal.createNodeInfoAndSigned
@@ -39,9 +38,9 @@ class NetworkMapClientTest {
 
     @Before
     fun setUp() {
-        server = NetworkMapServer(cacheTimeout, PortAllocation.Incremental(10000).nextHostAndPort())
+        server = NetworkMapServer(cacheTimeout, NetworkHostAndPort("localhost", 10000))
         val hostAndPort = server.start()
-        networkMapClient = NetworkMapClient(URL("http://${hostAndPort.host}:${hostAndPort.port}"), DEV_ROOT_CA.certificate)
+        networkMapClient = NetworkMapClient(URL("http://$hostAndPort"), DEV_ROOT_CA.certificate)
     }
 
     @After
@@ -51,23 +50,22 @@ class NetworkMapClientTest {
 
     @Test
     fun `registered node is added to the network map`() {
-        val (nodeInfo, signedNodeInfo) = createNodeInfoAndSigned(ALICE_NAME)
+        val (aliceNodeInfo, aliceSignedNodeInfo) = createNodeInfoAndSigned(ALICE_NAME)
+        val aliceNodeInfoHash = aliceNodeInfo.serialize().hash
 
-        networkMapClient.publish(signedNodeInfo)
+        networkMapClient.publish(aliceSignedNodeInfo)
 
-        val nodeInfoHash = nodeInfo.serialize().sha256()
+        assertThat(networkMapClient.getNetworkMap().payload.nodeInfoHashes).containsExactly(aliceNodeInfoHash)
+        assertEquals(aliceNodeInfo, networkMapClient.getNodeInfo(aliceNodeInfoHash))
 
-        assertThat(networkMapClient.getNetworkMap().payload.nodeInfoHashes).containsExactly(nodeInfoHash)
-        assertEquals(nodeInfo, networkMapClient.getNodeInfo(nodeInfoHash))
+        val (bobNodeInfo, bobSignedNodeInfo) = createNodeInfoAndSigned(BOB_NAME)
+        val bobNodeInfoHash = bobNodeInfo.serialize().hash
 
-        val (nodeInfo2, signedNodeInfo2) = createNodeInfoAndSigned(BOB_NAME)
+        networkMapClient.publish(bobSignedNodeInfo)
 
-        networkMapClient.publish(signedNodeInfo2)
-
-        val nodeInfoHash2 = nodeInfo2.serialize().sha256()
-        assertThat(networkMapClient.getNetworkMap().payload.nodeInfoHashes).containsExactly(nodeInfoHash, nodeInfoHash2)
+        assertThat(networkMapClient.getNetworkMap().payload.nodeInfoHashes).containsOnly(aliceNodeInfoHash, bobNodeInfoHash)
         assertEquals(cacheTimeout, networkMapClient.getNetworkMap().cacheMaxAge)
-        assertEquals(nodeInfo2, networkMapClient.getNodeInfo(nodeInfoHash2))
+        assertEquals(bobNodeInfo, networkMapClient.getNodeInfo(bobNodeInfoHash))
     }
 
     @Test

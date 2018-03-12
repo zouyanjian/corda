@@ -152,6 +152,11 @@ inline fun <reified T : Any> Path.readObject(): T = readAll().deserialize()
 
 fun InputStream.copyTo(target: Path, vararg options: CopyOption): Long = Files.copy(this, target, *options)
 
+/** Same as [InputStream.readBytes] but also closes the stream. */
+fun InputStream.readAll(): ByteArray = use { it.readBytes() }
+
+inline fun <reified T : Any> InputStream.readObject(): T = readAll().deserialize()
+
 fun String.abbreviate(maxWidth: Int): String = if (length <= maxWidth) this else take(maxWidth - 1) + "…"
 
 /** Return the sum of an Iterable of [BigDecimal]s. */
