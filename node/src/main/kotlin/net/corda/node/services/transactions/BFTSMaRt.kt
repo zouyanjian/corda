@@ -18,6 +18,7 @@ import net.corda.core.flows.*
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.declaredField
+import net.corda.core.internal.notary.NotaryInternalException
 import net.corda.core.internal.toTypedArray
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.CordaSerializable

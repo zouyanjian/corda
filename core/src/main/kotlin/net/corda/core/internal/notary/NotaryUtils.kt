@@ -1,4 +1,4 @@
-package net.corda.core.internal
+package net.corda.core.internal.notary
 
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.isFulfilledBy

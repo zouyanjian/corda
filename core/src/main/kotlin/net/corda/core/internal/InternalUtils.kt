@@ -8,8 +8,8 @@ import net.corda.core.cordapp.CordappContext
 import net.corda.core.crypto.*
 import net.corda.core.flows.NotarisationRequest
 import net.corda.core.flows.NotarisationRequestSignature
-import net.corda.core.flows.NotaryFlow
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.internal.notary.NotaryServiceFlow
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.ServicesForResolution
 import net.corda.core.serialization.SerializationContext
@@ -397,7 +397,7 @@ fun createCordappContext(cordapp: Cordapp, attachmentId: SecureHash?, classLoade
 }
 
 /** Verifies that the correct notarisation request was signed by the counterparty. */
-fun NotaryFlow.Service.validateRequestSignature(request: NotarisationRequest, signature: NotarisationRequestSignature) {
+fun NotaryServiceFlow.validateRequestSignature(request: NotarisationRequest, signature: NotarisationRequestSignature) {
     val requestingParty = otherSideSession.counterparty
     request.verifySignature(signature, requestingParty)
 }

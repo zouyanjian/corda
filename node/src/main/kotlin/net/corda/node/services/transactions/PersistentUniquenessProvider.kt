@@ -5,11 +5,11 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.sha256
 import net.corda.core.flows.NotarisationRequestSignature
 import net.corda.core.flows.NotaryError
-import net.corda.core.flows.NotaryInternalException
+import net.corda.core.internal.notary.NotaryInternalException
 import net.corda.core.flows.StateConsumptionDetails
 import net.corda.core.identity.Party
 import net.corda.core.internal.ThreadBox
-import net.corda.core.node.services.UniquenessProvider
+import net.corda.core.internal.notary.UniquenessProvider
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SingletonSerializeAsToken
