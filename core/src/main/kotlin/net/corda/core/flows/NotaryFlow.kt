@@ -7,7 +7,7 @@ import net.corda.core.contracts.TimeWindow
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.identity.Party
 import net.corda.core.internal.FetchDataFlow
-import net.corda.core.internal.generateSignature
+import net.corda.core.internal.notary.generateSignature
 import net.corda.core.internal.notary.validateSignatures
 import net.corda.core.transactions.ContractUpgradeWireTransaction
 import net.corda.core.transactions.SignedTransaction

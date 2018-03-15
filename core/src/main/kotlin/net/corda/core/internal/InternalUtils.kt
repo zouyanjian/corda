@@ -395,19 +395,3 @@ fun ByteBuffer.copyBytes(): ByteArray = ByteArray(remaining()).also { get(it) }
 fun createCordappContext(cordapp: Cordapp, attachmentId: SecureHash?, classLoader: ClassLoader, config: CordappConfig): CordappContext {
     return CordappContext(cordapp, attachmentId, classLoader, config)
 }
-
-/** Verifies that the correct notarisation request was signed by the counterparty. */
-fun NotaryServiceFlow.validateRequestSignature(request: NotarisationRequest, signature: NotarisationRequestSignature) {
-    val requestingParty = otherSideSession.counterparty
-    request.verifySignature(signature, requestingParty)
-}
-
-/** Creates a signature over the notarisation request using the legal identity key. */
-fun NotarisationRequest.generateSignature(serviceHub: ServiceHub): NotarisationRequestSignature {
-    val serializedRequest = this.serialize().bytes
-    val signature = with(serviceHub) {
-        val myLegalIdentity = myInfo.legalIdentitiesAndCerts.first().owningKey
-        keyManagementService.sign(serializedRequest, myLegalIdentity)
-    }
-    return NotarisationRequestSignature(signature, serviceHub.myInfo.platformVersion)
-}

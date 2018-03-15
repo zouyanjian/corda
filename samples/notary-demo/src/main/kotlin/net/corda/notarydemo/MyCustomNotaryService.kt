@@ -5,13 +5,9 @@ import net.corda.core.contracts.TimeWindow
 import net.corda.core.contracts.TransactionVerificationException
 import net.corda.core.flows.*
 import net.corda.core.internal.ResolveTransactionsFlow
-import net.corda.core.internal.notary.NotaryInternalException
-import net.corda.core.internal.notary.NotaryServiceFlow
-import net.corda.core.internal.notary.TransactionParts
-import net.corda.core.internal.validateRequestSignature
+import net.corda.core.internal.notary.*
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
-import net.corda.core.internal.notary.TrustedAuthorityNotaryService
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionWithSignatures
 import net.corda.core.transactions.WireTransaction

@@ -9,6 +9,7 @@ import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.internal.notary.NotaryInternalException
 import net.corda.core.internal.notary.NotaryService
+import net.corda.core.internal.notary.verifySignature
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
