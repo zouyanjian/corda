@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
     <Properties>
-        <Property name="defaultLogLevel">info</Property>
+        <Property name="defaultLogLevel">warn</Property>
     </Properties>
 
     <ThresholdFilter level="trace"/>

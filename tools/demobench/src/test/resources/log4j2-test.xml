@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
 
+    <Properties>
+        <Property name="defaultLogLevel">warn</Property>
+    </Properties>
+
+    <ThresholdFilter level="info"/>
+
     <Appenders>
-        <Console name="Console-Appender" target="SYSTEM_OUT">
-            <PatternLayout pattern="%date %highlight{%level %c{1}.%method - %msg%n}{INFO=white,WARN=red,FATAL=bright red}"/>
+        <Console name="Console-Appender" target="SYSTEM_OUT" ignoreExceptions="false">
+            <PatternLayout pattern="%highlight{%level{length=1} %date{HH:mm:ssZ} [%t] %c{2}.%method - %msg %X%n}{INFO=white,WARN=red,FATAL=bright red}" />
         </Console>
     </Appenders>
 
     <Loggers>
-        <Root level="info">
+        <Root level="${sys:defaultLogLevel}">
             <AppenderRef ref="Console-Appender"/>
         </Root>
     </Loggers>

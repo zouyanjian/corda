@@ -5,13 +5,14 @@
         <Property name="log-path">logs</Property>
         <Property name="log-name">node-${hostName}</Property>
         <Property name="archive">${log-path}/archive</Property>
+        <Property name="defaultLogLevel">warn</Property>
     </Properties>
 
     <ThresholdFilter level="trace"/>
 
     <Appenders>
-        <Console name="Console-Appender" target="SYSTEM_OUT">
-            <PatternLayout pattern="[%-5level] %date{HH:mm:ss,SSSZ} [%t] %c{2}.%method - %msg%n"/>
+        <Console name="Console-Appender" target="SYSTEM_OUT" ignoreExceptions="false">
+            <PatternLayout pattern="%highlight{%level{length=1} %date{HH:mm:ssZ} [%t] %c{2}.%method - %msg %X%n}{INFO=white,WARN=red,FATAL=bright red}" />
         </Console>
 
         <!-- Required for printBasicInfo -->
@@ -47,7 +48,7 @@
     </Appenders>
 
     <Loggers>
-        <Root level="trace">
+        <Root level="${sys:defaultLogLevel}">
             <AppenderRef ref="Console-Appender" level="info"/>
             <AppenderRef ref="RollingFile-Appender" level="debug"/>
         </Root>
